@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { AnimatePresence } from 'motion/react'
-import { ArrowLeft, Ban, CircleAlert, Loader2, Plus, Save, Stamp, Trash2, X } from 'lucide-react'
+import { ArrowLeft, Ban, CircleAlert, Download, Loader2, Plus, Save, Stamp, Trash2, X } from 'lucide-react'
+import { useAuth } from '../../auth.jsx'
+import { downloadPayslips } from '../../lib/reports.js'
 import { supabase } from '../../lib/supabase.js'
 import { money } from '../../lib/util.js'
 import { EMPTY_PRIOR, addToPrior, computePayslip, ratesOn, suggestedBasic } from '../../lib/payroll.js'
@@ -30,6 +32,7 @@ export default function PayRun() {
   const [msg, setMsg] = useState(null)
   const [confirm, setConfirm] = useState(null) // 'finalize' | 'delete'
   const [voidReason, setVoidReason] = useState('')
+  const { profile } = useAuth()
 
   const load = useCallback(async () => {
     const [r, it, e, rr, pp] = await Promise.all([
@@ -204,16 +207,36 @@ export default function PayRun() {
             {run.finalized_at && ` · finalized ${fmtDateTime(run.finalized_at)} by ${people[run.finalized_by] ?? 'an admin'}`}
           </p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={async () => {
+                setBusy('pdf')
+                try {
+                  await downloadPayslips({ run, items: slips, employees: emps, by: profile?.full_name })
+                } catch (e) {
+                  setError(e.message ?? String(e))
+                }
+                setBusy(null)
+              }}
+              disabled={busy !== null}
+              className="press flex h-11 items-center gap-2 rounded-lg px-4 font-semibold ring-1 ring-ink/15 disabled:opacity-40"
+            >
+              {busy === 'pdf' ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Download className="size-4" aria-hidden="true" />} {draft ? 'Preview payslips' : 'Payslips PDF'}
+            </button>
+          )}
         {draft && (
-          <div className="flex flex-wrap gap-2">
+          <>
             <button type="button" onClick={() => save()} disabled={!dirty || busy} className="press flex h-11 items-center gap-2 rounded-lg px-4 font-semibold ring-1 ring-ink/15 disabled:opacity-40">
               {busy === 'save' ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Save className="size-4" aria-hidden="true" />} {dirty ? 'Save draft' : 'Saved'}
             </button>
             <button type="button" onClick={() => setConfirm('finalize')} disabled={!items.length || missingRates.length > 0} className="press flex h-11 items-center gap-2 rounded-lg bg-ink px-4 font-semibold text-paper disabled:opacity-40">
               <Stamp className="size-4" aria-hidden="true" /> Finalize
             </button>
-          </div>
+          </>
         )}
+        </div>
       </div>
 
       {run.status === 'voided' && (

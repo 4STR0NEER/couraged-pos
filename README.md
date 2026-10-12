@@ -30,8 +30,9 @@ Sell memberships through the register as products with `kind = 'service'` and `c
 - **Staff** (admin only): add logins with a temporary password, change access (admin, staff, inactive), set a new password. There is always at least one admin.
 - **Expenses** (admin only): one-off expenses and a monthly-bills checklist (rent, electricity, water…), with optional receipt photos/PDFs in a private storage bucket. Never deleted: voided with a reason, and every edit is logged.
 - **Payroll** (admin only): employees (own pay schedule, monthly/daily/hourly rate, government numbers), pay runs from draft to finalized, SSS + PhilHealth + Pag-IBIG + BIR withholding settled month-to-date, editable rate tables with effective dates (pre-filled with 2025 rates; have the accountant confirm). Finalizing posts salaries and employer contributions to Expenses; voiding a run voids them.
+- **Reports** (admin only): Analytics > Download PDF gives a sales & profit report for this/last week, this/last month or the dates on screen (P&L vs previous period, breakdowns, payroll, every expense with OR numbers, signature lines). Each pay run has a payslips PDF (summary, remittance table, one payslip per person); drafts are stamped DRAFT.
 - **Analytics** (admin only): General, Merchandise, Memberships and Staff tabs for any date range.
 
 ## Tests
 
-`npm test` runs every suite. `npm run test:payroll` checks the payroll arithmetic with worked examples. `npm run test:api` checks the staff server function's rules. `npm run test:db` runs the schema and every patch in an in-process Postgres (PGlite) and checks permissions, checkout, stock and reports as staff, admin and an inactive user.
+`npm test` runs every suite. `npm run test:payroll` checks the payroll arithmetic with worked examples; `npm run test:pdf` builds both PDFs. `npm run test:api` checks the staff server function's rules. `npm run test:db` runs the schema and every patch in an in-process Postgres (PGlite) and checks permissions, checkout, stock and reports as staff, admin and an inactive user.

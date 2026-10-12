@@ -7,11 +7,11 @@ import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Inventory from './pages/Inventory.jsx'
-import Sales from './pages/Sales.jsx'
-import Staff from './pages/Staff.jsx'
-import Expenses from './pages/Expenses.jsx'
-import Payroll from './pages/payroll/Payroll.jsx'
-// Charts are heavy and admin-only; the register tablet never downloads them.
+// Admin-only pages load on demand, so the register tablet never downloads them.
+const Sales = lazy(() => import('./pages/Sales.jsx'))
+const Staff = lazy(() => import('./pages/Staff.jsx'))
+const Expenses = lazy(() => import('./pages/Expenses.jsx'))
+const Payroll = lazy(() => import('./pages/payroll/Payroll.jsx'))
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
 
@@ -86,20 +86,18 @@ function Shell() {
           </button>
         </div>
       </header>
-      <Routes>
+      <Suspense fallback={null}>
+        <Routes>
         <Route path="/" element={<Register />} />
         <Route path="/inventory" element={<Inventory />} />
         {isAdmin && <Route path="/sales" element={<Sales />} />}
         {isAdmin && <Route path="/staff" element={<Staff />} />}
         {isAdmin && <Route path="/expenses" element={<Expenses />} />}
         {isAdmin && <Route path="/payroll/*" element={<Payroll />} />}
-        {isAdmin && <Route path="/analytics/*" element={
-              <Suspense fallback={null}>
-                <Analytics />
-              </Suspense>
-            } />}
+        {isAdmin && <Route path="/analytics/*" element={<Analytics />} />}
         <Route path="*" element={<Soon title="Not found" />} />
       </Routes>
+      </Suspense>
     </div>
   )
 }

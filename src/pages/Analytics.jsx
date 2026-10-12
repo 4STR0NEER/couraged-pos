@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Bar, BarChart, CartesianGrid, LabelList, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { ArrowDownRight, ArrowUpRight, CircleAlert, Minus } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, CircleAlert, Download, FileText, Loader2, Minus } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { money } from '../lib/util.js'
 import RangePicker, { addDays, fmtDay, monthStart, presets } from '../components/RangePicker.jsx'
-import { CountUp, EASE_OUT } from '../components/ui.jsx'
+import { CountUp, EASE_OUT, Sheet } from '../components/ui.jsx'
+import { useAuth } from '../auth.jsx'
+import { downloadSalesReport, reportPeriods } from '../lib/reports.js'
 
 // Validated (dataviz validator, light surface): cost/profit pair passes CVD + contrast. Same values as the marketing dashboard.
 // Gold = profit and crimson = money out on every chart; sales lines are blue. The trio is validated too.
@@ -45,6 +47,7 @@ export default function Analytics() {
   const [range, setRange] = useState({ key: '30d', from: opts[2][2], to: opts[2][3] })
   const [report, setReport] = useState(null)
   const [error, setError] = useState(null)
+  const [pdf, setPdf] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -68,7 +71,12 @@ export default function Analytics() {
             {range.from === range.to ? fmtDay(range.from, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : `${fmtDay(range.from, { month: 'long', day: 'numeric', year: 'numeric' })} – ${fmtDay(range.to, { month: 'long', day: 'numeric', year: 'numeric' })}`}
           </p>
         </div>
-        <RangePicker opts={opts} range={range} setRange={setRange} />
+        <div className="flex flex-wrap items-center gap-2">
+          <RangePicker opts={opts} range={range} setRange={setRange} />
+          <button type="button" onClick={() => setPdf(true)} className="press flex h-11 items-center gap-2 rounded-lg bg-ink px-4 font-semibold text-paper">
+            <Download className="size-4" aria-hidden="true" /> Download PDF
+          </button>
+        </div>
       </header>
 
       <nav aria-label="Analytics" className="mt-6 flex gap-1 overflow-x-auto border-b border-ink/10">
@@ -100,7 +108,55 @@ export default function Analytics() {
           </Routes>
         </div>
       )}
+      <AnimatePresence>{pdf && <DownloadSheet key="pdf" range={range} onClose={() => setPdf(false)} />}</AnimatePresence>
     </main>
+  )
+}
+
+// Weekly and monthly reports for the owner and auditors.
+function DownloadSheet({ range, onClose }) {
+  const { profile } = useAuth()
+  const [busy, setBusy] = useState(null)
+  const [err, setErr] = useState(null)
+  const [done, setDone] = useState(null)
+  const go = async ([key, , from, to, label]) => {
+    setBusy(key)
+    setErr(null)
+    setDone(null)
+    try {
+      await downloadSalesReport({ from, to, label, by: profile?.full_name })
+      setDone(label)
+    } catch (e) {
+      setErr(e.message ?? String(e))
+    }
+    setBusy(null)
+  }
+  return (
+    <Sheet title="Download report" subtitle="A PDF for the owner, the board or the auditors." onClose={onClose}>
+      <p className="text-sm text-smoke">
+        Each report has the profit and loss with the previous period, key figures, sales by payment method, category, product, membership and staff, payroll paid, and every expense with its OR number. It ends with signature lines.
+      </p>
+      <ul className="mt-4 space-y-2">
+        {reportPeriods(range).map((p) => (
+          <li key={p[0]}>
+            <button type="button" onClick={() => go(p)} disabled={busy !== null} className="press flex w-full items-center gap-3 rounded-xl bg-paper p-4 text-left ring-1 ring-ink/8 transition-shadow duration-150 hover:ring-ink/25 disabled:opacity-60">
+              <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-mist">
+                {busy === p[0] ? <Loader2 className="size-5 animate-spin" aria-hidden="true" /> : <FileText className="size-5" aria-hidden="true" />}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{p[1]}</span>
+                <span className="tabular block truncate text-sm text-smoke">{p[4]}</span>
+              </span>
+              <Download className="size-4 shrink-0 text-smoke" aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 space-y-2" aria-live="polite">
+        {done && <p className="text-sm font-semibold text-[#0B6B35]">Downloaded: {done}. Check your downloads folder.</p>}
+        {err && <p role="alert" className="text-sm font-semibold text-crimson">Couldn't make the PDF. {err}</p>}
+      </div>
+    </Sheet>
   )
 }
 
