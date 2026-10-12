@@ -1,10 +1,12 @@
+import { useCallback, useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router'
-import { MotionConfig, motion } from 'motion/react'
-import { BarChart3, Boxes, Loader2, LogOut, ReceiptText, ShoppingCart } from 'lucide-react'
+import { AnimatePresence, MotionConfig, motion } from 'motion/react'
+import { BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart } from 'lucide-react'
 import { configured } from './lib/supabase.js'
 import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import Splash from './components/Splash.jsx'
 
 export default function App() {
   if (!configured) return <Setup />
@@ -19,17 +21,18 @@ export default function App() {
   )
 }
 
+// The heartbeat splash covers boot and the session/role check, and plays at least once.
 function Gate() {
   const { session, profile } = useAuth()
-  if (session === undefined || (session && profile === undefined))
-    return (
-      <main className="grid min-h-dvh place-items-center bg-ink">
-        <Loader2 className="size-8 animate-spin text-gold" aria-label="Loading" />
-      </main>
-    )
-  if (!session) return <Login />
-  if (profile.role !== 'staff' && profile.role !== 'admin') return <NoAccess />
-  return <Shell />
+  const [played, setPlayed] = useState(false)
+  const done = useCallback(() => setPlayed(true), [])
+  const loading = session === undefined || (session && profile === undefined)
+  return (
+    <>
+      <AnimatePresence>{(loading || !played) && <Splash key="splash" onDone={done} />}</AnimatePresence>
+      {!loading && (!session ? <Login /> : profile.role === 'staff' || profile.role === 'admin' ? <Shell /> : <NoAccess />)}
+    </>
+  )
 }
 
 // [label, path, icon, adminOnly]

@@ -21,3 +21,6 @@ export function quickCash(total) {
   }
   return [...out].sort((a, b) => a - b).slice(0, 4)
 }
+
+// Money fields are text, not type=number: a mouse wheel over a number input silently changes the amount.
+export const moneyInput = (set) => (e) => /^\d*\.?\d{0,2}$/.test(e.target.value) && set(e.target.value)
