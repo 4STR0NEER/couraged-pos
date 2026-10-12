@@ -5,7 +5,7 @@ Separate app and Vercel project from the marketing site (`../couraged`); same br
 
 ## Setup
 
-1. Supabase › SQL Editor: run `supabase/schema.sql` (already done), then every numbered patch in `supabase/` in order (`001_…` to `006_…`). Each patch is safe to run again.
+1. Supabase › SQL Editor: run `supabase/schema.sql` (already done), then every numbered patch in `supabase/` in order (`001_…` to `007_…`). Each patch is safe to run again.
 2. Supabase › Authentication › Sign In / Providers: turn **off** "Allow new users to sign up". Create staff accounts yourself under Authentication › Users › Add user. New accounts start `inactive`; give them a role:
    ```sql
    update public.profiles set role = 'staff' where id = (select id from auth.users where email = 'staff@example.com');
@@ -29,8 +29,9 @@ Sell memberships through the register as products with `kind = 'service'` and `c
 - **Sales** (admin only): every receipt with filters, cash-in-drawer totals, and voiding with a reason.
 - **Staff** (admin only): add logins with a temporary password, change access (admin, staff, inactive), set a new password. There is always at least one admin.
 - **Expenses** (admin only): one-off expenses and a monthly-bills checklist (rent, electricity, water…), with optional receipt photos/PDFs in a private storage bucket. Never deleted: voided with a reason, and every edit is logged.
+- **Payroll** (admin only): employees (own pay schedule, monthly/daily/hourly rate, government numbers), pay runs from draft to finalized, SSS + PhilHealth + Pag-IBIG + BIR withholding settled month-to-date, editable rate tables with effective dates (pre-filled with 2025 rates; have the accountant confirm). Finalizing posts salaries and employer contributions to Expenses; voiding a run voids them.
 - **Analytics** (admin only): General, Merchandise, Memberships and Staff tabs for any date range.
 
 ## Tests
 
-`npm test` runs both suites. `npm run test:api` checks the staff server function's rules. `npm run test:db` runs the schema and every patch in an in-process Postgres (PGlite) and checks permissions, checkout, stock and reports as staff, admin and an inactive user.
+`npm test` runs every suite. `npm run test:payroll` checks the payroll arithmetic with worked examples. `npm run test:api` checks the staff server function's rules. `npm run test:db` runs the schema and every patch in an in-process Postgres (PGlite) and checks permissions, checkout, stock and reports as staff, admin and an inactive user.

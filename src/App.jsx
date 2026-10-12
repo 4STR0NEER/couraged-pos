@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart, UsersRound, Wallet } from 'lucide-react'
+import { Banknote, BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart, UsersRound, Wallet } from 'lucide-react'
 import { configured } from './lib/supabase.js'
 import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
@@ -10,6 +10,7 @@ import Inventory from './pages/Inventory.jsx'
 import Sales from './pages/Sales.jsx'
 import Staff from './pages/Staff.jsx'
 import Expenses from './pages/Expenses.jsx'
+import Payroll from './pages/payroll/Payroll.jsx'
 // Charts are heavy and admin-only; the register tablet never downloads them.
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
@@ -47,6 +48,7 @@ const NAV = [
   ['Sales', '/sales', ReceiptText, true],
   ['Inventory', '/inventory', Boxes, false],
   ['Expenses', '/expenses', Wallet, true],
+  ['Payroll', '/payroll', Banknote, true],
   ['Analytics', '/analytics', BarChart3, true],
   ['Staff', '/staff', UsersRound, true],
 ]
@@ -68,7 +70,7 @@ function Shell() {
                   {isActive && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-lg bg-paper/10" transition={{ type: 'spring', duration: 0.35, bounce: 0.1 }} />}
                   {isActive && <motion.span layoutId="nav-bar" className="absolute right-3 bottom-0 left-3 h-0.5 rounded-full bg-gold" transition={{ type: 'spring', duration: 0.35, bounce: 0.1 }} />}
                   <Icon className={`relative size-4 ${isActive ? 'text-gold' : 'text-ash'}`} aria-hidden="true" />
-                  <span className={`relative max-lg:sr-only ${isActive ? 'text-paper' : 'text-ash'}`}>{label}</span>
+                  <span className={`relative max-xl:sr-only ${isActive ? 'text-paper' : 'text-ash'}`}>{label}</span>
                 </>
               )}
             </NavLink>
@@ -90,6 +92,7 @@ function Shell() {
         {isAdmin && <Route path="/sales" element={<Sales />} />}
         {isAdmin && <Route path="/staff" element={<Staff />} />}
         {isAdmin && <Route path="/expenses" element={<Expenses />} />}
+        {isAdmin && <Route path="/payroll/*" element={<Payroll />} />}
         {isAdmin && <Route path="/analytics/*" element={
               <Suspense fallback={null}>
                 <Analytics />

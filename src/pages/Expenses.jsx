@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
-import { Ban, CalendarClock, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, History, Loader2, Paperclip, Pencil, Plus, Search, Settings2, Tags } from 'lucide-react'
+import { Ban, Banknote, CalendarClock, ChevronLeft, ChevronRight, CircleAlert, CircleCheck, History, Loader2, Paperclip, Pencil, Plus, Search, Settings2, Tags } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { manilaToday, money, moneyInput, uuid } from '../lib/util.js'
 import { EASE_OUT, Segmented, Sheet, fmtDateTime } from '../components/ui.jsx'
@@ -236,6 +237,11 @@ export default function Expenses() {
                       <button type="button" onClick={(e) => (e.stopPropagation(), setOpen({ kind: 'expense', id: r.id }))} className={`text-left ${voided ? 'text-smoke' : ''}`}>
                         <span className="font-semibold group-hover:underline group-hover:decoration-gold group-hover:decoration-2 group-hover:underline-offset-4">{r.description}</span>
                         {r.receipt_path && <Paperclip className="ml-1.5 inline size-3.5 text-smoke" aria-label="Has receipt" />}
+                        {r.payroll_run_id && (
+                          <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-ink/8 px-2 py-0.5 align-middle text-xs font-bold">
+                            <Banknote className="size-3" aria-hidden="true" /> Payroll
+                          </span>
+                        )}
                         {(r.vendor || r.reference_no) && <span className="block text-xs text-smoke">{[r.vendor, r.reference_no && `Ref ${r.reference_no}`].filter(Boolean).join(' · ')}</span>}
                       </button>
                     </td>
@@ -300,6 +306,8 @@ const safeName = (n) => n.toLowerCase().replace(/[^a-z0-9.]+/g, '-').slice(-60)
 function ExpenseSheet({ expense, preset, cats, people, today, onClose, onDone }) {
   const create = !expense
   const voided = expense?.status === 'voided'
+  const fromPayroll = Boolean(expense?.payroll_run_id)
+  const locked = voided || fromPayroll
   const [tab, setTab] = useState('details')
   const [f, setF] = useState(() =>
     create
@@ -379,9 +387,20 @@ function ExpenseSheet({ expense, preset, cats, people, today, onClose, onDone })
               </p>
             </div>
           )}
+          {fromPayroll && (
+            <div role="note" className="mb-4 rounded-xl bg-paper p-4 text-sm ring-1 ring-ink/10">
+              <p className="flex items-center gap-2 font-semibold">
+                <Banknote className="size-4" aria-hidden="true" /> Posted by a finalized pay run
+              </p>
+              <p className="mt-1 text-smoke">Payroll entries can only be changed by voiding the pay run, so payslips and expenses always agree.</p>
+              <Link to={`/payroll/runs/${expense.payroll_run_id}`} className="mt-2 inline-block font-semibold underline decoration-gold decoration-2 underline-offset-4">
+                Open the pay run
+              </Link>
+            </div>
+          )}
           <form onSubmit={save} className="space-y-4">
             <AnimatePresence>{notice && <Notice>{notice}</Notice>}</AnimatePresence>
-            <fieldset disabled={voided} className="space-y-4">
+            <fieldset disabled={locked} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <label className={label}>
                   Date paid
@@ -452,9 +471,9 @@ function ExpenseSheet({ expense, preset, cats, people, today, onClose, onDone })
               </label>
             </fieldset>
             {err && <Problem>{err}</Problem>}
-            {!voided && <Submit busy={busy}>{create ? (preset?.recurring_id ? 'Record bill' : 'Add expense') : 'Save changes'}</Submit>}
+            {!locked && <Submit busy={busy}>{create ? (preset?.recurring_id ? 'Record bill' : 'Add expense') : 'Save changes'}</Submit>}
           </form>
-          {expense && !voided && <VoidExpense expense={expense} onDone={onDone} />}
+          {expense && !locked && <VoidExpense expense={expense} onDone={onDone} />}
         </>
       )}
     </Sheet>
