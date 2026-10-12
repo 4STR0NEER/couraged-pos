@@ -1,0 +1,96 @@
+import { BrowserRouter, NavLink, Route, Routes } from 'react-router'
+import { MotionConfig, motion } from 'motion/react'
+import { BarChart3, Boxes, Loader2, LogOut, ReceiptText, ShoppingCart } from 'lucide-react'
+import { configured } from './lib/supabase.js'
+import { AuthProvider, useAuth } from './auth.jsx'
+import Login, { NoAccess, Setup } from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+
+export default function App() {
+  if (!configured) return <Setup />
+  return (
+    <MotionConfig reducedMotion="user">
+      <AuthProvider>
+        <BrowserRouter>
+          <Gate />
+        </BrowserRouter>
+      </AuthProvider>
+    </MotionConfig>
+  )
+}
+
+function Gate() {
+  const { session, profile } = useAuth()
+  if (session === undefined || (session && profile === undefined))
+    return (
+      <main className="grid min-h-dvh place-items-center bg-ink">
+        <Loader2 className="size-8 animate-spin text-gold" aria-label="Loading" />
+      </main>
+    )
+  if (!session) return <Login />
+  if (profile.role !== 'staff' && profile.role !== 'admin') return <NoAccess />
+  return <Shell />
+}
+
+// [label, path, icon, adminOnly]
+const NAV = [
+  ['Register', '/', ShoppingCart, false],
+  ['Sales', '/sales', ReceiptText, false],
+  ['Inventory', '/inventory', Boxes, false],
+  ['Analytics', '/analytics', BarChart3, true],
+]
+
+function Shell() {
+  const { profile, isAdmin, signOut } = useAuth()
+  return (
+    <div className="min-h-dvh">
+      <header className="sticky top-0 z-20 flex h-14 items-center gap-3 bg-ink px-3 text-paper sm:px-4">
+        <img src="/assets/logo.jpg" alt="" className="size-9 shrink-0 mix-blend-lighten" />
+        <span className="font-display text-lg font-extrabold uppercase leading-none tracking-[0.04em] max-sm:hidden">
+          CourageD <span className="text-gold">POS</span>
+        </span>
+        <nav aria-label="Main" className="flex min-w-0 gap-1 overflow-x-auto sm:ml-4">
+          {NAV.filter((n) => isAdmin || !n[3]).map(([label, to, Icon]) => (
+            <NavLink key={to} to={to} end className="relative flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold">
+              {({ isActive }) => (
+                <>
+                  {isActive && <motion.span layoutId="nav-pill" className="absolute inset-0 rounded-lg bg-paper/10" transition={{ type: 'spring', duration: 0.35, bounce: 0.1 }} />}
+                  {isActive && <motion.span layoutId="nav-bar" className="absolute right-3 bottom-0 left-3 h-0.5 rounded-full bg-gold" transition={{ type: 'spring', duration: 0.35, bounce: 0.1 }} />}
+                  <Icon className={`relative size-4 ${isActive ? 'text-gold' : 'text-ash'}`} aria-hidden="true" />
+                  <span className={`relative max-md:sr-only ${isActive ? 'text-paper' : 'text-ash'}`}>{label}</span>
+                </>
+              )}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="ml-auto flex shrink-0 items-center gap-3">
+          <p className="text-right text-sm leading-tight max-sm:hidden">
+            <span className="block font-semibold">{profile.full_name}</span>
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-gold">{profile.role}</span>
+          </p>
+          <button type="button" onClick={signOut} aria-label="Sign out" className="press grid size-10 place-items-center rounded-lg text-ash ring-1 ring-paper/10 hover:text-paper">
+            <LogOut className="size-4" aria-hidden="true" />
+          </button>
+        </div>
+      </header>
+      <Routes>
+        <Route path="/" element={<Register />} />
+        <Route path="/sales" element={<Soon title="Sales history" phase={4} />} />
+        <Route path="/inventory" element={<Soon title="Inventory" phase={2} />} />
+        {isAdmin && <Route path="/analytics/*" element={<Soon title="Analytics" phase={3} />} />}
+        <Route path="*" element={<Soon title="Not found" />} />
+      </Routes>
+    </div>
+  )
+}
+
+function Soon({ title, phase }) {
+  return (
+    <main className="grid min-h-[calc(100dvh-3.5rem)] place-items-center px-4 text-center">
+      <div>
+        {phase && <p className="text-sm font-bold uppercase tracking-[0.14em] text-smoke">Phase {phase}</p>}
+        <h1 className="font-display text-5xl font-black uppercase">{title}</h1>
+      </div>
+    </main>
+  )
+}

@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Brand tokens, kept identical to the marketing site (couraged/src/index.css). */
+@theme {
+  --color-paper: #FFFFFF;
+  --color-mist: #F2F2F2;
+  --color-gold: #FEBE10;
+  --color-crimson: #BA0021;
+  --color-ink: #19171B;
+  --color-ink-2: #26232A; /* raised surface on ink */
+  --color-smoke: #5E5A63; /* secondary text on light */
+  --color-ash: #B4AFB9;   /* secondary text on ink */
+  --color-active: #12A150;
+
+  --font-display: 'Big Shoulders Display Variable', 'Arial Narrow', sans-serif;
+  --font-sans: 'Barlow', system-ui, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+body {
+  background: var(--color-mist);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+* {
+  scrollbar-color: var(--color-smoke) transparent;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Press feedback for anything tappable. */
+.press {
+  transition: transform 140ms var(--ease-out);
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Hide number-input spinners; amounts are typed or tapped. */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+}
