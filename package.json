@@ -8,7 +8,9 @@
     "dev:tablet": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "test:db": "node supabase/test.mjs"
+    "test:db": "node supabase/test.mjs",
+    "test:api": "node server/staff.test.mjs",
+    "test": "node server/staff.test.mjs && node supabase/test.mjs"
   },
   "dependencies": {
     "@fontsource-variable/big-shoulders-display": "^5.3.0",

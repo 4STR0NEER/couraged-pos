@@ -1,13 +1,14 @@
 import { lazy, Suspense, useCallback, useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
-import { BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart } from 'lucide-react'
+import { BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart, UsersRound } from 'lucide-react'
 import { configured } from './lib/supabase.js'
 import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Inventory from './pages/Inventory.jsx'
 import Sales from './pages/Sales.jsx'
+import Staff from './pages/Staff.jsx'
 // Charts are heavy and admin-only; the register tablet never downloads them.
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
@@ -45,6 +46,7 @@ const NAV = [
   ['Sales', '/sales', ReceiptText, true],
   ['Inventory', '/inventory', Boxes, false],
   ['Analytics', '/analytics', BarChart3, true],
+  ['Staff', '/staff', UsersRound, true],
 ]
 
 function Shell() {
@@ -84,6 +86,7 @@ function Shell() {
         <Route path="/" element={<Register />} />
         <Route path="/inventory" element={<Inventory />} />
         {isAdmin && <Route path="/sales" element={<Sales />} />}
+        {isAdmin && <Route path="/staff" element={<Staff />} />}
         {isAdmin && <Route path="/analytics/*" element={
               <Suspense fallback={null}>
                 <Analytics />

@@ -12,7 +12,7 @@ const db = new PGlite()
 await db.exec(`
   create role anon nologin; create role authenticated nologin;
   create schema auth;
-  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}', last_sign_in_at timestamptz);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
   grant usage on schema public, auth to anon, authenticated;
   grant execute on function auth.uid() to anon, authenticated;
@@ -107,4 +107,15 @@ await as(A, `insert into products (code, name, selling_price) values ('CFH05', '
 const r3 = (await as(A, `select sales_report((now() at time zone 'Asia/Manila')::date - 6, (now() at time zone 'Asia/Manila')::date) as r`))[0].r
 assert.ok(r3.products.some((p) => p.product_id === gid)); ok('archived product still appears in reports')
 await fails(A, `select delete_product($1)`, /not found/, [gid]); ok('cannot delete twice')
+// 005: staff management.
+await fails(S, 'select * from staff_list()', /Only an admin/); ok('staff cannot list accounts')
+const list = await as(A, 'select * from staff_list()')
+assert.equal(list[0].email, 'admin@x'); assert.ok(list.some((x) => x.email === 'rand@x' && x.role === 'inactive')); ok('admin lists accounts with emails, admins first')
+await fails(A, `update profiles set role = 'staff' where id = $1`, /at least one admin/, [A]); ok('the last admin cannot be demoted')
+await as(A, `update profiles set role = 'admin', full_name = 'Rand Promoted' where id = $1`, [X])
+await as(A, `update profiles set role = 'staff' where id = $1`, [A]); ok('with a second admin, the first can step down')
+await fails(S, `update profiles set role = 'admin' where id = $1`, /row-level security|0 rows/, [S]).catch(async () => {
+  assert.equal((await one(`select role from profiles where id = '${S}'`)).role, 'staff')
+}); ok('staff cannot promote themselves')
+await fails(X, `update profiles set created_at = now() where id = $1`, /permission denied/, [X]); ok('only name and role are editable')
 console.log('all passed')
