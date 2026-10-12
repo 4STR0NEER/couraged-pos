@@ -14,7 +14,12 @@ await db.exec(`
   create schema auth;
   create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}', last_sign_in_at timestamptz);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-  grant usage on schema public, auth to anon, authenticated;
+  create schema storage;
+  create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+  create table storage.objects (id uuid primary key default gen_random_uuid(), bucket_id text, name text, owner uuid);
+  alter table storage.objects enable row level security;
+  grant usage on schema public, auth, storage to anon, authenticated;
+  grant all on storage.objects to authenticated;
   grant execute on function auth.uid() to anon, authenticated;
   alter default privileges in schema public grant all on tables to anon, authenticated;
   alter default privileges in schema public grant all on sequences to anon, authenticated;
@@ -118,4 +123,34 @@ await fails(S, `update profiles set role = 'admin' where id = $1`, /row-level se
   assert.equal((await one(`select role from profiles where id = '${S}'`)).role, 'staff')
 }); ok('staff cannot promote themselves')
 await fails(X, `update profiles set created_at = now() where id = $1`, /permission denied/, [X]); ok('only name and role are editable')
+// 006: expenses.
+await db.exec(`update profiles set role = 'admin' where id = '${A}'`) // A stepped down in the 005 checks
+const cat = (await one(`select id from expense_categories where name = 'Electricity'`)).id
+await fails(S, 'select count(*) from expense_categories', /./).catch(() => {})
+assert.equal((await as(S, 'select * from expense_categories')).length, 0); ok('staff cannot see expense categories')
+await fails(S, `insert into expenses (expense_date, category_id, description, amount) values (current_date, $1, 'x', 10)`, /row-level security/, [cat]); ok('staff cannot record expenses')
+await fails(A, `insert into expenses (expense_date, category_id, description, amount, created_by) values (current_date, $1, 'x', 10, $2)`, /permission denied|row-level/, [cat, S]); ok('cannot record an expense in someone else’s name')
+const today = (await one(`select (now() at time zone 'Asia/Manila')::date::text d`)).d
+const ex1 = (await as(A, `insert into expenses (expense_date, category_id, description, amount, payment_method, reference_no) values ($1, $2, 'VECO bill', 4200, 'bank_transfer', 'OR-123') returning id`, [today, cat]))[0].id
+await as(A, `update expenses set amount = 4250 where id = $1`, [ex1])
+const exch = await as(A, `select field, old_value, new_value, changed_by from expense_changes where expense_id = $1 order by id`, [ex1])
+assert.deepEqual(exch.map((c) => c.field), ['created', 'amount']); assert.equal(exch[1].old_value, '4200.00'); assert.equal(exch[1].changed_by, A); ok('expense edits are logged with who and the old value')
+await fails(A, `delete from expenses where id = $1`, /permission denied/, [ex1]); ok('expenses can never be deleted')
+await fails(A, `select void_expense($1, '  ')`, /reason is required/, [ex1]); ok('voiding needs a reason')
+await fails(A, `update expenses set status = 'voided' where id = $1`, /permission denied/, [ex1]); ok('status only changes through void_expense')
+const bill = (await as(A, `insert into recurring_expenses (name, category_id, usual_amount, due_day) values ('VECO', $1, 4000, 15) returning id`, [cat]))[0].id
+const recBill = `insert into expenses (expense_date, category_id, description, amount, recurring_id, for_month) values ($1, $2, 'VECO October', 4100, $3, date_trunc('month', $1::date)::date) returning id`
+const b1 = (await as(A, recBill, [today, cat, bill]))[0].id
+await fails(A, recBill, /duplicate key|unique/, [today, cat, bill]); ok('a monthly bill can only be recorded once per month')
+await as(A, `select void_expense($1, 'Wrong amount')`, [b1])
+await fails(A, `update expenses set amount = 1 where id = $1 returning id`, /./, [b1]).catch(async () => assert.equal(+(await one(`select amount from expenses where id = '${b1}'`)).amount, 4100))
+assert.equal(+(await one(`select amount from expenses where id = '${b1}'`)).amount, 4100); ok('a voided expense cannot be edited')
+await as(A, recBill, [today, cat, bill]); ok('after voiding, that month’s bill can be recorded again')
+const r4 = (await as(A, `select sales_report($1::date - 6, $1::date) as r`, [today]))[0].r
+assert.equal(+r4.expenses.total, 4250 + 4100); assert.equal(r4.expenses.by_category[0].category, 'Electricity')
+assert.equal(r4.daily.at(-1).expenses, 8350); ok(`report: expenses ₱${r4.expenses.total} by category and per day (voided excluded)`)
+assert.ok('gross_profit' in r4.totals && 'previous' in r4.expenses); ok('net profit inputs present (gross profit − expenses)')
+await as(A, `insert into storage.objects (bucket_id, name) values ('receipts', '2026/10/a.jpg')`)
+await fails(S, `insert into storage.objects (bucket_id, name) values ('receipts', 'x.jpg')`, /row-level security/); ok('only admins can upload receipt files')
+assert.equal((await as(S, `select * from storage.objects where bucket_id = 'receipts'`)).length, 0); ok('staff cannot see receipt files')
 console.log('all passed')

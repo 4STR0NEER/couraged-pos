@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { NavLink, Route, Routes } from 'react-router'
 import { motion } from 'motion/react'
-import { Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, LabelList, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ArrowDownRight, ArrowUpRight, CircleAlert, Minus } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { money } from '../lib/util.js'
@@ -9,16 +9,18 @@ import RangePicker, { addDays, fmtDay, monthStart, presets } from '../components
 import { CountUp, EASE_OUT } from '../components/ui.jsx'
 
 // Validated (dataviz validator, light surface): cost/profit pair passes CVD + contrast. Same values as the marketing dashboard.
-const C = { profit: '#A87800', cost: '#BA0021', one: '#A87800', grid: '#E4E2E6', axis: '#5E5A63', ink: '#19171B' }
+// Gold = profit and crimson = money out on every chart; sales lines are blue. The trio is validated too.
+const C = { profit: '#A87800', cost: '#BA0021', sales: '#2F6FB0', one: '#A87800', grid: '#E4E2E6', axis: '#5E5A63', ink: '#19171B' }
 const RAMP = ['#FFF7DD', '#FFE8A3', '#FED45E', '#FEBE10', '#D69B00', '#9C6F00'] // sequential gold, light -> dark
 const MEMBERSHIP = 'Membership'
 const METHOD = { cash: 'Cash', gcash: 'GCash', maya: 'Maya', card: 'Card', bank_transfer: 'Bank transfer', other: 'Other' }
 const shortPeso = (v) => (v >= 1000 ? `₱${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k` : money(v))
 const num = (v) => Number(v) || 0
+const signed = (v) => (v < 0 ? '−' + money(-v) : money(v))
 
 // Days for short ranges, weeks (from Monday) up to ~7 months, then months.
-function bucketize(rows, keys) {
-  const unit = rows.length <= 62 ? 'day' : rows.length <= 210 ? 'week' : 'month'
+function bucketize(rows, keys, maxDays = 62) {
+  const unit = rows.length <= maxDays ? 'day' : rows.length <= Math.max(210, maxDays) ? 'week' : 'month'
   const out = new Map()
   for (const r of rows) {
     const dow = (new Date(r.date + 'T00:00:00Z').getUTCDay() + 6) % 7
@@ -131,15 +133,16 @@ function Panel({ title, note, className = '', children, i = 0 }) {
   )
 }
 
-function Delta({ now, before, fmt = (v) => Math.round(v) }) {
-  if (!before && !now) return <span>No sales in the previous period either</span>
+function Delta({ now, before, fmt = (v) => Math.round(v), upIsGood = true }) {
+  if (!before && !now) return <span>No change vs previous period</span>
   if (!before) return <span>New vs previous period</span>
   const d = now - before
-  const pct = Math.round((d / before) * 100)
+  const pct = Math.round((d / Math.abs(before)) * 100)
   const Icon = d > 0 ? ArrowUpRight : d < 0 ? ArrowDownRight : Minus
+  const good = d === 0 ? null : d > 0 === upIsGood
   return (
     <span className="inline-flex items-center gap-1">
-      <Icon className={`size-3.5 ${d > 0 ? 'text-active' : d < 0 ? 'text-crimson' : ''}`} aria-hidden="true" />
+      <Icon className={`size-3.5 ${good === null ? '' : good ? 'text-active' : 'text-crimson'}`} aria-hidden="true" />
       {d >= 0 ? '+' : '−'}
       {fmt(Math.abs(d))} ({pct >= 0 ? '+' : ''}
       {pct}%) vs previous period
@@ -148,16 +151,26 @@ function Delta({ now, before, fmt = (v) => Math.round(v) }) {
 }
 
 function Kpis({ items }) {
+  const four = items.length % 4 === 0
   return (
-    <motion.dl className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl bg-paper ring-1 ring-ink/5 md:grid-cols-3 xl:grid-cols-6" initial="out" animate="in" transition={{ staggerChildren: 0.04 }}>
+    <motion.dl
+      className={`mt-6 grid grid-cols-2 overflow-hidden rounded-xl bg-paper ring-1 ring-ink/5 ${four ? 'lg:grid-cols-4' : 'md:grid-cols-3 xl:grid-cols-6'}`}
+      initial="out"
+      animate="in"
+      transition={{ staggerChildren: 0.04 }}
+    >
       {items.map((k) => (
         <motion.div
           key={k.label}
-          className="border-ink/8 p-5 not-last:border-r max-md:[&:nth-child(2n)]:border-r-0 md:max-xl:[&:nth-child(3n)]:border-r-0 max-xl:border-b"
+          className={`border-ink/8 p-5 not-last:border-r max-md:[&:nth-child(2n)]:border-r-0 ${
+            four
+              ? 'md:max-lg:[&:nth-child(2n)]:border-r-0 lg:[&:nth-child(4n)]:border-r-0 max-lg:[&:nth-last-child(n+3)]:border-b lg:[&:nth-last-child(n+5)]:border-b'
+              : 'md:max-xl:[&:nth-child(3n)]:border-r-0 max-xl:border-b'
+          }`}
           variants={{ out: { opacity: 0 }, in: { opacity: 1, transition: { duration: 0.3, ease: EASE_OUT } } }}
         >
           <dt className="text-sm font-semibold text-smoke">{k.label}</dt>
-          <dd className={`tabular mt-2 font-display font-black leading-none ${typeof k.value === 'number' ? 'text-3xl sm:text-4xl xl:text-[2.4rem]' : 'truncate text-2xl sm:text-3xl'}`} title={typeof k.value === 'number' ? undefined : k.value}>
+          <dd className={`tabular mt-2 font-display font-black leading-none ${typeof k.value === 'number' ? 'text-3xl sm:text-4xl xl:text-[2.4rem]' : 'truncate text-2xl sm:text-3xl'} ${k.tone ?? ''}`} title={typeof k.value === 'number' ? undefined : k.value}>
             {typeof k.value === 'number' ? <CountUp value={k.value} format={k.fmt ?? ((v) => Math.round(v).toLocaleString('en-PH'))} duration={0.7} /> : k.value}
           </dd>
           <dd className="tabular mt-1.5 text-xs text-smoke">{k.note}</dd>
@@ -169,7 +182,7 @@ function Kpis({ items }) {
 
 const axis = { stroke: C.axis, fontSize: 12, tickLine: false, axisLine: false }
 
-function Tip({ active, payload, label, fmt = (v) => v }) {
+function Tip({ active, payload, label, fmt = (v) => v, total: showTotal = false }) {
   if (!active || !payload?.length) return null
   const total = payload.reduce((s, p) => s + num(p.value), 0)
   return (
@@ -181,7 +194,7 @@ function Tip({ active, payload, label, fmt = (v) => v }) {
           {p.name}: <b>{fmt(p.value)}</b>
         </p>
       ))}
-      {payload.length > 1 && (
+      {showTotal && payload.length > 1 && (
         <p className="tabular mt-1 border-t border-paper/15 pt-1 text-ash">
           Sales: <b className="text-paper">{fmt(total)}</b>
         </p>
@@ -221,7 +234,7 @@ function SalesChart({ rows }) {
             <CartesianGrid stroke={C.grid} vertical={false} />
             <XAxis dataKey="label" {...axis} minTickGap={24} />
             <YAxis {...axis} width={52} tickFormatter={shortPeso} />
-            <Tooltip cursor={{ fill: 'rgb(25 23 27 / 0.05)' }} content={<Tip fmt={money} />} />
+            <Tooltip cursor={{ fill: 'rgb(25 23 27 / 0.05)' }} content={<Tip fmt={money} total />} />
             <Bar dataKey="cost" name="Cost of goods" stackId="s" fill={C.cost} stroke="#fff" strokeWidth={1} maxBarSize={40} animationDuration={700} />
             <Bar dataKey="profit" name="Gross profit" stackId="s" fill={C.profit} stroke="#fff" strokeWidth={1} radius={[4, 4, 0, 0]} maxBarSize={40} animationDuration={700} />
           </BarChart>
@@ -257,7 +270,7 @@ function SalesChart({ rows }) {
 }
 
 // One series, one colour; value labels at the bar end. rows: [{ name, value, note? }]
-function HBars({ rows, fmt = money, height }) {
+function HBars({ rows, fmt = money, height, color = C.one }) {
   if (!rows.length) return <Empty>Nothing sold in this range.</Empty>
   return (
     <div style={{ height: height ?? Math.max(120, rows.length * 40) }}>
@@ -266,7 +279,7 @@ function HBars({ rows, fmt = money, height }) {
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" {...axis} width={140} tick={{ fill: C.ink, fontSize: 13 }} />
           <Tooltip cursor={{ fill: 'rgb(25 23 27 / 0.05)' }} content={<Tip fmt={fmt} />} />
-          <Bar dataKey="value" name="Value" fill={C.one} radius={[0, 4, 4, 0]} barSize={18} animationDuration={700}>
+          <Bar dataKey="value" name="Value" fill={color} radius={[0, 4, 4, 0]} barSize={18} animationDuration={700}>
             <LabelList dataKey="value" position="right" fontSize={12} fill={C.ink} formatter={fmt} />
           </Bar>
         </BarChart>
@@ -379,17 +392,28 @@ const pct = (a, b) => (b ? `${Math.round((a / b) * 100)}%` : '–')
 
 // ---- Tabs ----
 
+// Net profit = sales − cost of goods − expenses (payroll included once it's recorded as expenses).
 function General({ r }) {
   const t = r.totals
   const p = r.previous
+  const ex = r.expenses
   const avg = t.receipts ? num(t.revenue) / t.receipts : 0
   const payTotal = r.payments.reduce((s, x) => s + num(x.total), 0)
+  const net = num(t.gross_profit) - num(ex?.total)
+  const prevNet = num(p.gross_profit) - num(ex?.previous)
   return (
     <>
+      {!ex && (
+        <p role="alert" className="mt-6 flex items-center gap-2 rounded-lg bg-gold/20 px-4 py-3 text-sm font-semibold text-[#6B4E00]">
+          <CircleAlert className="size-4 shrink-0" aria-hidden="true" /> Expenses aren't in this report yet. In Supabase › SQL Editor, run supabase/006_expenses.sql, then refresh.
+        </p>
+      )}
       <Kpis
         items={[
           { label: 'Sales', value: num(t.revenue), fmt: money, note: <Delta now={num(t.revenue)} before={num(p.revenue)} fmt={money} /> },
-          { label: 'Gross profit', value: num(t.gross_profit), fmt: money, note: `${pct(num(t.gross_profit), num(t.revenue))} margin` },
+          { label: 'Gross profit', value: num(t.gross_profit), fmt: money, note: `Sales minus cost of goods · ${pct(num(t.gross_profit), num(t.revenue))}` },
+          { label: 'Expenses', value: num(ex?.total), fmt: money, note: <Delta now={num(ex?.total)} before={num(ex?.previous)} fmt={money} upIsGood={false} /> },
+          { label: net < 0 ? 'Net loss' : 'Net profit', value: net, fmt: signed, tone: net < 0 ? 'text-crimson' : '', note: <Delta now={net} before={prevNet} fmt={money} /> },
           { label: 'Receipts', value: t.receipts, note: <Delta now={t.receipts} before={p.receipts} /> },
           { label: 'Average sale', value: avg, fmt: money, note: `${(t.receipts ? num(t.items) / t.receipts : 0).toFixed(1)} items per receipt` },
           { label: 'Discounts given', value: num(t.discounts), fmt: money, note: `${pct(num(t.discounts), num(t.revenue) + num(t.discounts))} of list price` },
@@ -397,19 +421,78 @@ function General({ r }) {
         ]}
       />
       <div className="mt-6 grid gap-6 xl:grid-cols-5">
-        <Panel title="Sales over time" note="Each bar is the sale total, split into what the goods cost and the profit kept" className="xl:col-span-3" i={0}>
+        <Panel title="Money in and out" note="Net profit is sales minus the cost of goods sold minus expenses" className="xl:col-span-5" i={0}>
+          <MoneyLines rows={r.daily} />
+        </Panel>
+        <Panel title="Sales over time" note="Each bar is the sale total, split into what the goods cost and the profit kept" className="xl:col-span-3" i={1}>
           <SalesChart rows={r.daily} />
         </Panel>
-        <Panel title="How customers paid" note={payTotal ? 'Share of sales by payment method' : null} className="xl:col-span-2" i={1}>
-          <HBars rows={r.payments.map((x) => ({ name: `${METHOD[x.method] ?? x.method} · ${pct(num(x.total), payTotal)}`, value: num(x.total) }))} />
+        <Panel title="Expenses by category" note={ex?.by_category.length ? `${money(ex.total)} in this range` : null} className="xl:col-span-2" i={2}>
+          {ex?.by_category.length ? <HBars rows={ex.by_category.map((x) => ({ name: x.category, value: num(x.total) }))} color={C.cost} /> : <Empty>No expenses recorded in this range.</Empty>}
         </Panel>
-        <Panel title="Busiest hours" note="Receipts by day and hour, whole range" className="xl:col-span-3" i={2}>
+        <Panel title="Busiest hours" note="Receipts by day and hour, whole range" className="xl:col-span-3" i={3}>
           <Heatmap hours={r.hours} />
         </Panel>
-        <Panel title="Sales by category" note="Before receipt discounts" className="xl:col-span-2" i={3}>
+        <Panel title="How customers paid" note={payTotal ? 'Share of sales by payment method' : null} className="xl:col-span-2" i={4}>
+          <HBars rows={r.payments.map((x) => ({ name: `${METHOD[x.method] ?? x.method} · ${pct(num(x.total), payTotal)}`, value: num(x.total) }))} />
+        </Panel>
+        <Panel title="Sales by category" note="Before receipt discounts" className="xl:col-span-5" i={5}>
           <HBars rows={r.categories.map((x) => ({ name: x.category, value: num(x.revenue) }))} />
         </Panel>
       </div>
+    </>
+  )
+}
+
+const LINES = [
+  ['revenue', 'Sales', C.sales],
+  ['expenses', 'Expenses', C.cost],
+  ['net', 'Net profit', C.profit],
+]
+
+// Three lines on one ₱ axis, a zero line for losses, and each line's latest value labelled at its end.
+function MoneyLines({ rows }) {
+  // Days only up to two weeks: rent and bills land on single days, so daily net profit swings misleadingly.
+  const { unit, data } = bucketize(rows, ['revenue', 'profit', 'expenses'], 14)
+  const chart = data.map((d) => ({ ...d, net: d.profit - d.expenses }))
+  if (!chart.some((d) => d.revenue || d.expenses)) return <Empty>No sales or expenses in this range yet.</Empty>
+  const last = chart.length - 1
+  const fmtAxis = (v) => (v < 0 ? '−' + shortPeso(-v) : shortPeso(v))
+  const endLabel = (props) =>
+    props.index === last ? (
+      <text x={props.x + 8} y={props.y} dy={4} fontSize={12} fontWeight={600} fill={C.ink}>
+        {fmtAxis(props.value)}
+      </text>
+    ) : null
+  return (
+    <>
+      <Legend items={LINES.map(([, n, c]) => [n, c])} />
+      <div className="mt-2 h-80">
+        <ResponsiveContainer>
+          <LineChart data={chart} margin={{ top: 12, right: 64, left: 4, bottom: 0 }}>
+            <CartesianGrid stroke={C.grid} vertical={false} />
+            <XAxis dataKey="label" {...axis} minTickGap={24} />
+            <YAxis {...axis} width={56} tickFormatter={fmtAxis} />
+            <ReferenceLine y={0} stroke={C.axis} strokeWidth={1} />
+            <Tooltip cursor={{ stroke: C.axis, strokeDasharray: '3 3' }} content={<Tip fmt={signed} />} />
+            {LINES.map(([key, name, color]) => (
+              <Line
+                key={key}
+                type="linear"
+                dataKey={key}
+                name={name}
+                stroke={color}
+                strokeWidth={2}
+                dot={chart.length <= 14 ? { r: 4, fill: color, stroke: '#fff', strokeWidth: 2 } : false}
+                activeDot={{ r: 5, stroke: '#fff', strokeWidth: 2 }}
+                animationDuration={800}
+                label={endLabel}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-2 text-xs text-smoke">Grouped by {unit}. Expenses count on the day they were paid.</p>
     </>
   )
 }
