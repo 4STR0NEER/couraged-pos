@@ -104,3 +104,6 @@ end $$;
 
 revoke all on function public.sales_report(date, date) from public, anon;
 grant execute on function public.sales_report(date, date) to authenticated;
+
+-- Tell the Supabase API about new or changed functions right away.
+notify pgrst, 'reload schema';

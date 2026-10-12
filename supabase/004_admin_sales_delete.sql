@@ -58,3 +58,6 @@ end $$;
 
 revoke all on function public.delete_product(uuid) from public, anon;
 grant execute on function public.delete_product(uuid) to authenticated;
+
+-- Tell the Supabase API about new or changed functions right away.
+notify pgrst, 'reload schema';

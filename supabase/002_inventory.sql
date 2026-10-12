@@ -127,3 +127,6 @@ end $$;
 
 revoke all on function public.set_stock_count(uuid, integer, text) from public, anon;
 grant execute on function public.set_stock_count(uuid, integer, text) to authenticated;
+
+-- Tell the Supabase API about new or changed functions right away.
+notify pgrst, 'reload schema';

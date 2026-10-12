@@ -138,3 +138,6 @@ end $$;
 
 revoke all on function public.record_sale(jsonb, text, numeric, numeric, text, text, timestamptz, uuid) from public, anon;
 grant execute on function public.record_sale(jsonb, text, numeric, numeric, text, text, timestamptz, uuid) to authenticated;
+
+-- Tell the Supabase API about new or changed functions right away.
+notify pgrst, 'reload schema';

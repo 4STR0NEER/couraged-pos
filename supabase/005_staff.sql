@@ -50,3 +50,6 @@ create trigger profiles_keep_one_admin
 -- ---------------------------------------------------------------------
 revoke update on public.profiles from authenticated, anon;
 grant update (full_name, role) on public.profiles to authenticated;
+
+-- Tell the Supabase API about new or changed functions right away.
+notify pgrst, 'reload schema';
