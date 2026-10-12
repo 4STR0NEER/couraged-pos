@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Short screens: small laptops (often at 125% scaling) leave ~500-700px of height. */
+@custom-variant short (@media (max-height: 720px));
+
 /* Brand tokens, kept identical to the marketing site (couraged/src/index.css). */
 @theme {
   --color-paper: #FFFFFF;

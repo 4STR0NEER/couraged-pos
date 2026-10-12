@@ -338,7 +338,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-5 pt-5 pb-3 short:pt-3 short:pb-1">
         <h2 className="font-display text-2xl font-extrabold uppercase leading-none">
           Current sale {count > 0 && <span className="tabular text-ash">· {count}</span>}
         </h2>
@@ -354,7 +354,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
         </div>
       </div>
 
-      <ul className="min-h-36 flex-1 overflow-y-auto px-5">
+      <ul className="min-h-36 flex-1 overflow-y-auto px-5 short:min-h-16">
         <AnimatePresence initial={false}>
           {lines.map((l) => (
             <motion.li
@@ -364,7 +364,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
               animate={{ opacity: 1, transform: 'translateX(0px)' }}
               exit={{ opacity: 0, transition: { duration: 0.12 } }}
               transition={{ duration: 0.2, ease: EASE_OUT }}
-              className="flex items-center gap-3 border-b border-paper/8 py-3"
+              className="flex items-center gap-3 border-b border-paper/8 py-3 short:py-1.5"
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{l.name}</p>
@@ -400,7 +400,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
         )}
       </ul>
 
-      <div className="space-y-3.5 border-t border-paper/10 px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 space-y-3.5 border-t border-paper/10 px-5 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] short:space-y-2 short:pt-2.5 short:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="tabular space-y-2 text-sm">
           <div className="flex min-h-9 items-center justify-between gap-2">
             <div className="flex gap-1.5">
@@ -454,7 +454,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
           )}
           <div className="flex items-end justify-between">
             <span className="font-display text-xl font-extrabold uppercase">Total</span>
-            <span className="font-display text-5xl font-black leading-none">
+            <span className="font-display text-5xl font-black leading-none short:text-4xl">
               <CountUp value={total} format={money} duration={0.25} />
             </span>
           </div>
@@ -481,7 +481,7 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
           type="button"
           onClick={charge}
           disabled={!canCharge}
-          className="press flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-gold font-display text-2xl font-black uppercase tracking-[0.03em] text-ink transition-[opacity,transform] duration-150 disabled:opacity-35"
+          className="press flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-gold font-display text-2xl short:h-12 font-black uppercase tracking-[0.03em] text-ink transition-[opacity,transform] duration-150 disabled:opacity-35"
         >
           {busy ? (
             <>
@@ -506,10 +506,10 @@ function CashIn({ total, tendered, setTendered, change }) {
         <label className="relative block">
           <span className="sr-only">Cash received</span>
           <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ash">₱</span>
-          <input inputMode="decimal" autoComplete="off" value={tendered} onChange={moneyInput(setTendered)} placeholder={`Cash received`} className={`${darkField} tabular h-14 pl-7 text-lg`} />
+          <input inputMode="decimal" autoComplete="off" value={tendered} onChange={moneyInput(setTendered)} placeholder={`Cash received`} className={`${darkField} tabular h-14 pl-7 text-lg short:h-12`} />
         </label>
         {/* No count-up here: the figure must be right the instant the cashier reads it. */}
-        <div className={`flex h-14 min-w-36 flex-col justify-center rounded-lg px-3.5 text-right transition-colors duration-150 ${short ? 'bg-crimson/25 ring-1 ring-crimson/60' : 'bg-ink-2'}`} aria-live="polite">
+        <div className={`flex h-14 min-w-36 flex-col short:h-12 justify-center rounded-lg px-3.5 text-right transition-colors duration-150 ${short ? 'bg-crimson/25 ring-1 ring-crimson/60' : 'bg-ink-2'}`} aria-live="polite">
           <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-ash">{short ? 'Short by' : 'Change'}</span>
           <span className={`tabular font-display text-3xl font-black leading-none ${short ? 'text-paper' : 'text-gold'}`}>{money(Math.abs(change))}</span>
         </div>
@@ -559,7 +559,7 @@ function Receipt({ sale, onDone }) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-40 grid place-items-center bg-ink/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-ink/70 p-4 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -577,18 +577,18 @@ function Receipt({ sale, onDone }) {
         exit={{ opacity: 0, transform: 'translateY(8px) scale(0.98)', transition: { duration: 0.15 } }}
         transition={{ duration: 0.3, ease: EASE_OUT }}
       >
-        <div className="relative overflow-hidden bg-ink px-6 pt-6 pb-4 text-paper">
+        <div className="relative overflow-hidden bg-ink px-6 pt-6 pb-4 text-paper short:pt-4 short:pb-2">
           <div className="glow pointer-events-none absolute top-1/2 left-0 size-72 -translate-x-1/3 -translate-y-1/3 rounded-full bg-[radial-gradient(circle,rgb(186_0_33/0.55)_0%,rgb(254_190_16/0.16)_40%,transparent_68%)] opacity-25" />
           <p id="receipt-title" className="relative flex items-center gap-2 text-sm font-bold text-active">
             <CircleCheck className="size-4" aria-hidden="true" /> Sale recorded{sale.sale_no ? ` · receipt #${String(sale.sale_no).padStart(5, '0')}` : ''}
           </p>
-          <p className="relative mt-4 font-display text-xl font-extrabold uppercase text-ash">{cash ? 'Change to give' : `Paid by ${METHOD_LABEL[sale.payment_method]}`}</p>
-          <p className="amount tabular relative origin-left font-display text-7xl font-black leading-none text-gold">{money(cash ? (sale.change_due ?? 0) : sale.total)}</p>
+          <p className="relative mt-4 font-display text-xl font-extrabold uppercase text-ash short:mt-2">{cash ? 'Change to give' : `Paid by ${METHOD_LABEL[sale.payment_method]}`}</p>
+          <p className="amount tabular relative origin-left font-display text-7xl font-black leading-none text-gold short:text-6xl">{money(cash ? (sale.change_due ?? 0) : sale.total)}</p>
           <svg viewBox="0 0 400 28" preserveAspectRatio="none" className="relative mt-4 h-6 w-full overflow-visible" aria-hidden="true">
             <path className="ecg" d="M0 16 H150 l7 -4 l7 4 H178 l6 -14 l8 24 l6 -10 H232 l8 -5 l8 5 H400" fill="none" stroke="var(--color-crimson)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           </svg>
         </div>
-        <div className="px-6 pt-4 pb-6">
+        <div className="px-6 pt-4 pb-6 short:pt-3 short:pb-4">
           <ul className="tabular space-y-1.5 text-sm">
             {sale.sale_items.map((i, k) => (
               <li key={k} className="flex justify-between gap-3">
@@ -623,7 +623,7 @@ function Receipt({ sale, onDone }) {
               </div>
             )}
           </dl>
-          <button type="button" autoFocus onClick={onDone} className="press mt-6 h-12 w-full rounded-xl bg-ink font-display text-xl font-black uppercase tracking-[0.04em] text-paper">
+          <button type="button" autoFocus onClick={onDone} className="press mt-6 h-12 w-full rounded-xl bg-ink font-display short:mt-4 text-xl font-black uppercase tracking-[0.04em] text-paper">
             New sale
           </button>
         </div>

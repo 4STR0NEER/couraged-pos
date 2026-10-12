@@ -82,7 +82,7 @@ export default function Inventory() {
         ].map(([k, v, note, tone], i) => (
           <div key={k} className={`border-ink/8 p-5 ${i % 2 === 0 ? 'border-r' : ''} max-lg:[&:nth-child(-n+2)]:border-b lg:border-r lg:last:border-r-0`}>
             <dt className="text-sm font-semibold text-smoke">{k}</dt>
-            <dd className={`tabular mt-2 font-display text-4xl font-black leading-none ${tone ?? ''}`}>{products ? v : '–'}</dd>
+            <dd className={`tabular mt-2 font-display text-3xl font-black leading-none sm:text-4xl ${tone ?? ''}`}>{products ? v : '–'}</dd>
             {note && <dd className="tabular mt-1.5 text-xs text-smoke">{products ? note : ''}</dd>}
           </div>
         ))}

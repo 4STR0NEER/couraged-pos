@@ -157,7 +157,7 @@ function Kpis({ items }) {
           variants={{ out: { opacity: 0 }, in: { opacity: 1, transition: { duration: 0.3, ease: EASE_OUT } } }}
         >
           <dt className="text-sm font-semibold text-smoke">{k.label}</dt>
-          <dd className={`tabular mt-2 font-display font-black leading-none ${typeof k.value === 'number' ? 'text-4xl xl:text-[2.4rem]' : 'truncate text-3xl'}`} title={typeof k.value === 'number' ? undefined : k.value}>
+          <dd className={`tabular mt-2 font-display font-black leading-none ${typeof k.value === 'number' ? 'text-3xl sm:text-4xl xl:text-[2.4rem]' : 'truncate text-2xl sm:text-3xl'}`} title={typeof k.value === 'number' ? undefined : k.value}>
             {typeof k.value === 'number' ? <CountUp value={k.value} format={k.fmt ?? ((v) => Math.round(v).toLocaleString('en-PH'))} duration={0.7} /> : k.value}
           </dd>
           <dd className="tabular mt-1.5 text-xs text-smoke">{k.note}</dd>

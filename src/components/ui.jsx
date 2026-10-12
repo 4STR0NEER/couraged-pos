@@ -63,7 +63,7 @@ export function Sheet({ title, subtitle, onClose, header, children }) {
         variants={{ out: { transform: 'translateX(100%)' }, in: { transform: 'translateX(0%)' } }}
         transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
       >
-        <header className="bg-ink px-5 pt-5 pb-4 text-paper">
+        <header className="shrink-0 bg-ink px-5 pt-5 pb-4 text-paper short:pt-3 short:pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 id="sheet-title" className="truncate font-display text-3xl font-black uppercase leading-none">
@@ -77,7 +77,7 @@ export function Sheet({ title, subtitle, onClose, header, children }) {
           </div>
           {header}
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-[max(2rem,env(safe-area-inset-bottom))]">{children}</div>
       </motion.aside>
     </motion.div>
   )
