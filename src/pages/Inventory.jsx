@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { CircleAlert, CircleCheck, CircleX, ClipboardCheck, EyeOff, History, Loader2, PackageMinus, PackagePlus, Pencil, Plus, Search, SlidersHorizontal, X } from 'lucide-react'
+import { CircleAlert, CircleCheck, CircleX, ClipboardCheck, EyeOff, History, Loader2, PackageMinus, PackagePlus, Pencil, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { money, moneyInput } from '../lib/util.js'
-import { EASE_OUT, Segmented, fmtDateTime, stockOf } from '../components/ui.jsx'
+import { EASE_OUT, Segmented, Sheet, fmtDateTime, stockOf } from '../components/ui.jsx'
+import { useAuth } from '../auth.jsx'
 
 const field = 'h-11 w-full rounded-lg bg-paper px-3 ring-1 ring-ink/15 outline-none transition-shadow duration-150 placeholder:text-smoke/70 focus:ring-2 focus:ring-gold'
 const label = 'block text-sm font-semibold'
@@ -23,9 +24,10 @@ export default function Inventory() {
   const [cat, setCat] = useState('All')
   const [view, setView] = useState('all') // all | restock | hidden
   const [open, setOpen] = useState(null) // { id, tab } or { create: true }
+  const [flash, setFlash] = useState(null)
 
   const load = useCallback(async () => {
-    const { data, error } = await supabase.from('products').select('*').order('category').order('name')
+    const { data, error } = await supabase.from('products').select('*').is('deleted_at', null).order('category').order('name')
     if (error) setError(error.message)
     else {
       setError(null)
@@ -113,6 +115,25 @@ export default function Inventory() {
         />
       </div>
 
+      <AnimatePresence>
+        {flash && (
+          <motion.p
+            role="status"
+            className="mt-6 flex items-center gap-2 rounded-lg bg-active/12 px-4 py-3 text-sm font-semibold text-[#0B6B35]"
+            initial={{ opacity: 0, transform: 'translateY(-6px)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px)' }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            <CircleCheck className="size-4 shrink-0" aria-hidden="true" />
+            <span className="flex-1">{flash}</span>
+            <button type="button" onClick={() => setFlash(null)} aria-label="Dismiss" className="press grid size-7 place-items-center rounded-md hover:bg-active/15">
+              <X className="size-4" aria-hidden="true" />
+            </button>
+          </motion.p>
+        )}
+      </AnimatePresence>
+
       {error && (
         <div role="alert" className="mt-6 flex flex-wrap items-center gap-3 rounded-lg bg-crimson/10 px-4 py-3 text-sm text-crimson">
           <CircleAlert className="size-4 shrink-0" aria-hidden="true" />
@@ -171,6 +192,11 @@ export default function Inventory() {
             onSaved={async (id, tab) => {
               await load()
               if (id) setOpen({ id, tab })
+            }}
+            onDeleted={(msg) => {
+              setOpen(null)
+              setFlash(msg)
+              load()
             }}
           />
         )}
@@ -242,16 +268,10 @@ function IconBtn({ Icon, label, onClick }) {
   )
 }
 
-function Drawer({ product, tab: initial = 'stock', categories, people, onClose, onSaved }) {
+function Drawer({ product, tab: initial = 'stock', categories, people, onClose, onSaved, onDeleted }) {
   const create = !product
   const [tab, setTab] = useState(create ? 'details' : initial.split(':')[0])
   const [notice, setNotice] = useState(null)
-
-  useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
 
   const done = (msg, id, nextTab) => {
     setNotice(msg)
@@ -261,62 +281,30 @@ function Drawer({ product, tab: initial = 'stock', categories, people, onClose, 
   const tabs = product?.kind === 'good' ? [['stock', 'Stock', SlidersHorizontal], ['details', 'Details', Pencil], ['history', 'History', History]] : [['details', 'Details', Pencil], ['history', 'History', History]]
 
   return (
-    <motion.div className="fixed inset-0 z-40" initial="out" animate="in" exit="out">
-      <motion.div
-        className="absolute inset-0 bg-ink/50"
-        variants={{ out: { opacity: 0 }, in: { opacity: 1 } }}
-        transition={{ duration: 0.2 }}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <motion.aside
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="drawer-title"
-        className="absolute inset-y-0 right-0 flex w-full flex-col bg-mist shadow-[-16px_0_48px_-16px_rgb(0_0_0/0.45)] sm:w-[32rem]"
-        variants={{ out: { transform: 'translateX(100%)' }, in: { transform: 'translateX(0%)' } }}
-        transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
-      >
-        <header className="bg-ink px-5 pt-5 pb-4 text-paper">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 id="drawer-title" className="truncate font-display text-3xl font-black uppercase leading-none">
-                {create ? 'New product' : product.name}
-              </h2>
-              {!create && (
-                <p className="mt-1 text-sm text-ash">
-                  {product.code} · {product.category} · {money(product.selling_price)}
-                </p>
-              )}
-            </div>
-            <button type="button" onClick={onClose} aria-label="Close" className="press grid size-10 shrink-0 place-items-center rounded-lg ring-1 ring-paper/10">
-              <X className="size-5" aria-hidden="true" />
-            </button>
-          </div>
-          {!create && <Segmented id="drawer-tab" dark className="mt-4" value={tab} onChange={(t) => (setTab(t), setNotice(null))} options={tabs} />}
-        </header>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-          <AnimatePresence>
-            {notice && (
-              <motion.p
-                role="status"
-                className="mb-4 flex items-start gap-2 rounded-lg bg-active/12 px-3 py-2.5 text-sm font-semibold text-[#0B6B35]"
-                initial={{ opacity: 0, transform: 'translateY(-6px)' }}
-                animate={{ opacity: 1, transform: 'translateY(0px)' }}
-                exit={{ opacity: 0, transition: { duration: 0.12 } }}
-                transition={{ duration: 0.2, ease: EASE_OUT }}
-              >
-                <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> {notice}
-              </motion.p>
-            )}
-          </AnimatePresence>
-          {tab === 'stock' && product && <StockTab key={product.stock_qty} product={product} initial={initial.split(':')[1]} onDone={done} />}
-          {tab === 'details' && <DetailsTab product={product} categories={categories} onDone={done} />}
-          {tab === 'history' && product && <HistoryTab product={product} people={people} />}
-        </div>
-      </motion.aside>
-    </motion.div>
+    <Sheet
+      title={create ? 'New product' : product.name}
+      subtitle={!create && `${product.code} · ${product.category} · ${money(product.selling_price)}`}
+      onClose={onClose}
+      header={!create && <Segmented id="drawer-tab" dark className="mt-4" value={tab} onChange={(t) => (setTab(t), setNotice(null))} options={tabs} />}
+    >
+      <AnimatePresence>
+        {notice && (
+          <motion.p
+            role="status"
+            className="mb-4 flex items-start gap-2 rounded-lg bg-active/12 px-3 py-2.5 text-sm font-semibold text-[#0B6B35]"
+            initial={{ opacity: 0, transform: 'translateY(-6px)' }}
+            animate={{ opacity: 1, transform: 'translateY(0px)' }}
+            exit={{ opacity: 0, transition: { duration: 0.12 } }}
+            transition={{ duration: 0.2, ease: EASE_OUT }}
+          >
+            <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /> {notice}
+          </motion.p>
+        )}
+      </AnimatePresence>
+      {tab === 'stock' && product && <StockTab key={product.stock_qty} product={product} initial={initial.split(':')[1]} onDone={done} />}
+      {tab === 'details' && <DetailsTab product={product} categories={categories} onDone={done} onDeleted={onDeleted} />}
+      {tab === 'history' && product && <HistoryTab product={product} people={people} />}
+    </Sheet>
   )
 }
 
@@ -470,8 +458,9 @@ function StockTab({ product, initial, onDone }) {
 
 const BLANK = { name: '', code: '', category: '', kind: 'good', selling_price: '', unit_cost: '', reorder_level: '5', is_active: true }
 
-function DetailsTab({ product, categories, onDone }) {
+function DetailsTab({ product, categories, onDone, onDeleted }) {
   const create = !product
+  const { isAdmin } = useAuth()
   const [f, setF] = useState(() => (create ? BLANK : { ...product, selling_price: String(product.selling_price), unit_cost: String(product.unit_cost), reorder_level: String(product.reorder_level) }))
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState(null)
@@ -576,7 +565,7 @@ function DetailsTab({ product, categories, onDone }) {
       <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl bg-paper p-4 ring-1 ring-ink/5">
         <span>
           <span className="block font-semibold">Show on the register</span>
-          <span className="text-sm text-smoke">Hide instead of deleting so past sales keep their history.</span>
+          <span className="text-sm text-smoke">Turn off to take it off sale for now, without deleting it.</span>
         </span>
         <input type="checkbox" checked={f.is_active} onChange={(e) => set('is_active')(e.target.checked)} className="size-5 shrink-0 accent-[#19171B]" />
       </label>
@@ -587,7 +576,52 @@ function DetailsTab({ product, categories, onDone }) {
       <Submit busy={busy} disabled={!create && !Object.keys(changes).length}>
         {create ? 'Add product' : 'Save changes'}
       </Submit>
+      {!create && isAdmin && <DeleteProduct product={product} onDeleted={onDeleted} />}
     </form>
+  )
+}
+
+// Admin only. Two taps on purpose: deleting can't be undone.
+function DeleteProduct({ product, onDeleted }) {
+  const [confirm, setConfirm] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState(null)
+  const del = async () => {
+    setBusy(true)
+    setErr(null)
+    const { data, error } = await supabase.rpc('delete_product', { p_product_id: product.id })
+    setBusy(false)
+    if (error) return setErr(error.message)
+    onDeleted(data === 'archived' ? `${product.name} deleted. It stays on its old receipts and in reports.` : `${product.name} deleted.`)
+  }
+  return (
+    <div className="mt-2 border-t border-ink/10 pt-5">
+      {!confirm ? (
+        <button type="button" onClick={() => setConfirm(true)} className="press flex h-11 items-center gap-2 rounded-lg px-3 text-sm font-semibold text-crimson ring-1 ring-crimson/30 transition-colors duration-150 hover:bg-crimson/8">
+          <Trash2 className="size-4" aria-hidden="true" /> Delete product
+        </button>
+      ) : (
+        <div role="alertdialog" aria-labelledby="del-title" className="rounded-xl bg-crimson/8 p-4 ring-1 ring-crimson/25">
+          <p id="del-title" className="font-semibold">Delete {product.name}?</p>
+          <p className="mt-1 text-sm text-smoke">
+            It disappears from Inventory and the register. This can't be undone. If it was ever sold, its old receipts and reports keep it. Only want it off sale for a while? Turn off "Show on the register" instead.
+          </p>
+          {err && (
+            <div className="mt-3">
+              <Problem>{err}</Problem>
+            </div>
+          )}
+          <div className="mt-4 flex gap-2">
+            <button type="button" onClick={del} disabled={busy} className="press flex h-11 items-center gap-2 rounded-lg bg-crimson px-4 font-semibold text-paper disabled:opacity-60">
+              {busy ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />} Delete for good
+            </button>
+            <button type="button" onClick={() => (setConfirm(false), setErr(null))} autoFocus className="press h-11 rounded-lg px-4 font-semibold text-smoke ring-1 ring-ink/15 hover:text-ink">
+              Keep it
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

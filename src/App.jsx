@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Inventory from './pages/Inventory.jsx'
+import Sales from './pages/Sales.jsx'
 // Charts are heavy and admin-only; the register tablet never downloads them.
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
@@ -41,7 +42,7 @@ function Gate() {
 // [label, path, icon, adminOnly]
 const NAV = [
   ['Register', '/', ShoppingCart, false],
-  ['Sales', '/sales', ReceiptText, false],
+  ['Sales', '/sales', ReceiptText, true],
   ['Inventory', '/inventory', Boxes, false],
   ['Analytics', '/analytics', BarChart3, true],
 ]
@@ -81,8 +82,8 @@ function Shell() {
       </header>
       <Routes>
         <Route path="/" element={<Register />} />
-        <Route path="/sales" element={<Soon title="Sales history" phase={4} />} />
         <Route path="/inventory" element={<Inventory />} />
+        {isAdmin && <Route path="/sales" element={<Sales />} />}
         {isAdmin && <Route path="/analytics/*" element={
               <Suspense fallback={null}>
                 <Analytics />

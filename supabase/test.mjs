@@ -83,4 +83,28 @@ assert.equal((await one(`select stock_qty from products where id='${gid}'`)).sto
 const r2 = (await as(A, `select sales_report((now() at time zone 'Asia/Manila')::date - 6, (now() at time zone 'Asia/Manila')::date) as r`))[0].r
 assert.equal(r2.voids.count, 1); assert.equal(r2.totals.receipts, 1); ok('void puts stock back and moves the sale out of totals')
 await fails(A, `select sales_report(current_date, current_date - 1)`, /valid date range/); ok('bad range rejected')
+// 004: sales are admin-only; staff see their own receipts only.
+await db.exec(`insert into auth.users (id, email, raw_user_meta_data) values ('00000000-0000-0000-0000-00000000000d', 'staff2@x', '{"full_name":"Tess Two"}');
+  update public.profiles set role = 'staff' where id = '00000000-0000-0000-0000-00000000000d';`)
+const T = '00000000-0000-0000-0000-00000000000d'
+assert.equal((await as(T, 'select * from sales')).length, 0); ok('staff cannot see sales they did not ring up')
+assert.equal((await as(T, 'select * from sale_items')).length, 0); ok('…or their line items')
+const own = (await as(T, `select record_sale($1::jsonb, 'cash') as id`, [JSON.stringify([{ product_id: gid, qty: 1 }])]))[0].id
+assert.deepEqual((await as(T, 'select id from sales')).map((x) => x.id), [own]); ok('staff can read back their own receipt')
+assert.ok((await as(A, 'select count(*)::int c from sales'))[0].c >= 3); ok('admin sees every sale')
+
+// 004: delete_product.
+await fails(S, `select delete_product($1)`, /Only an admin/, [gid]); ok('staff cannot delete products')
+await as(A, `insert into products (code, name, selling_price) values ('TMP1', 'Never sold', 10)`)
+const tmp = (await one(`select id from products where code = 'TMP1'`)).id
+await as(S, `insert into stock_movements (product_id, movement_type, qty, created_by) values ($1, 'purchase', 5, $2)`, [tmp, S])
+assert.equal((await as(A, `select delete_product($1) as r`, [tmp]))[0].r, 'deleted')
+assert.equal((await one(`select count(*)::int c from products where id = '${tmp}'`)).c, 0); ok('unsold product is deleted completely, with its stock history')
+assert.equal((await as(A, `select delete_product($1) as r`, [gid]))[0].r, 'archived')
+const arch = await one(`select is_active, deleted_at, code from products where id = '${gid}'`)
+assert.ok(!arch.is_active && arch.deleted_at && arch.code.startsWith('CFH05 (deleted')); ok('sold product is archived and its code freed')
+await as(A, `insert into products (code, name, selling_price) values ('CFH05', 'Gatorade v2', 50)`); ok('the freed code can be reused')
+const r3 = (await as(A, `select sales_report((now() at time zone 'Asia/Manila')::date - 6, (now() at time zone 'Asia/Manila')::date) as r`))[0].r
+assert.ok(r3.products.some((p) => p.product_id === gid)); ok('archived product still appears in reports')
+await fails(A, `select delete_product($1)`, /not found/, [gid]); ok('cannot delete twice')
 console.log('all passed')

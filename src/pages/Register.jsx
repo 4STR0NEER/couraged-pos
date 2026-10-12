@@ -5,6 +5,7 @@ import { CircleAlert, CircleCheck, Loader2, Minus, Plus, Search, ShoppingBag, Ta
 import { supabase } from '../lib/supabase.js'
 import { manilaToday, money, moneyInput, quickCash, round2, uuid } from '../lib/util.js'
 import { CountUp, EASE_OUT, stockOf } from '../components/ui.jsx'
+import { useAuth } from '../auth.jsx'
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -17,6 +18,7 @@ const METHODS = [
 const METHOD_LABEL = Object.fromEntries(METHODS)
 
 export default function Register() {
+  const { isAdmin } = useAuth()
   const [products, setProducts] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [today, setToday] = useState(null)
@@ -43,7 +45,8 @@ export default function Register() {
         .eq('is_active', true)
         .order('category')
         .order('name'),
-      supabase.from('v_daily_sales').select('receipts, revenue').eq('sale_date', manilaToday()).maybeSingle(),
+      // Takings are admin-only; staff never request them.
+      isAdmin ? supabase.from('v_daily_sales').select('receipts, revenue').eq('sale_date', manilaToday()).maybeSingle() : { error: true },
     ])
     if (p.error) setLoadError(p.error.message)
     else {
@@ -51,7 +54,7 @@ export default function Register() {
       setProducts(p.data)
     }
     if (!t.error) setToday(t.data ?? { receipts: 0, revenue: 0 })
-  }, [])
+  }, [isAdmin])
   useEffect(() => {
     load()
   }, [load])
