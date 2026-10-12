@@ -5,7 +5,7 @@ Separate app and Vercel project from the marketing site (`../couraged`); same br
 
 ## Setup
 
-1. Supabase › SQL Editor: run `supabase/schema.sql` (already done), then every numbered patch in `supabase/` in order.
+1. Supabase › SQL Editor: run `supabase/schema.sql` (already done), then every numbered patch in `supabase/` in order (`001_…`, `002_…`, `003_…`). Each patch is safe to run again.
 2. Supabase › Authentication › Sign In / Providers: turn **off** "Allow new users to sign up". Create staff accounts yourself under Authentication › Users › Add user. New accounts start `inactive`; give them a role:
    ```sql
    update public.profiles set role = 'staff' where id = (select id from auth.users where email = 'staff@example.com');
@@ -20,3 +20,13 @@ New Vercel project from this repo; add `VITE_SUPABASE_URL` and `VITE_SUPABASE_AN
 ## Memberships
 
 Sell memberships through the register as products with `kind = 'service'` and `category = 'Membership'` (no stock tracking). The Memberships analytics tab reads that category.
+
+## What each part does
+
+- **Register** (staff + admin): checkout, cash change, receipt.
+- **Inventory** (staff + admin): receive deliveries, count shelves, write off spoilage, add and edit products and prices. Stock only changes through these actions, and every change is in the product's History with who made it.
+- **Analytics** (admin only): General, Merchandise, Memberships and Staff tabs for any date range.
+
+## Tests
+
+`npm run test:db` runs the schema and every patch in an in-process Postgres (PGlite) and checks permissions, checkout, stock and reports as staff, admin and an inactive user.

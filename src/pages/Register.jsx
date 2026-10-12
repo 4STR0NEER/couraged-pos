@@ -4,7 +4,7 @@ import { animate, createScope, svg } from 'animejs'
 import { CircleAlert, CircleCheck, Loader2, Minus, Plus, Search, ShoppingBag, Tag, UserRound, X } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { manilaToday, money, moneyInput, quickCash, round2, uuid } from '../lib/util.js'
-import { CountUp, EASE_OUT } from '../components/ui.jsx'
+import { CountUp, EASE_OUT, stockOf } from '../components/ui.jsx'
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -15,15 +15,6 @@ const METHODS = [
   ['other', 'Other'],
 ]
 const METHOD_LABEL = Object.fromEntries(METHODS)
-
-const stockOf = (p) =>
-  p.kind === 'service'
-    ? { label: 'Service', tone: 'text-smoke' }
-    : p.stock_qty <= 0
-      ? { label: 'Out of stock', tone: 'text-crimson' }
-      : p.stock_qty <= p.reorder_level
-        ? { label: `Low · ${p.stock_qty} left`, tone: 'text-[#7A5A00]' }
-        : { label: `${p.stock_qty} in stock`, tone: 'text-smoke' }
 
 export default function Register() {
   const [products, setProducts] = useState(null)

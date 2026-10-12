@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router'
 import { AnimatePresence, MotionConfig, motion } from 'motion/react'
 import { BarChart3, Boxes, LogOut, ReceiptText, ShoppingCart } from 'lucide-react'
@@ -6,6 +6,9 @@ import { configured } from './lib/supabase.js'
 import { AuthProvider, useAuth } from './auth.jsx'
 import Login, { NoAccess, Setup } from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import Inventory from './pages/Inventory.jsx'
+// Charts are heavy and admin-only; the register tablet never downloads them.
+const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
 
 export default function App() {
@@ -79,8 +82,12 @@ function Shell() {
       <Routes>
         <Route path="/" element={<Register />} />
         <Route path="/sales" element={<Soon title="Sales history" phase={4} />} />
-        <Route path="/inventory" element={<Soon title="Inventory" phase={2} />} />
-        {isAdmin && <Route path="/analytics/*" element={<Soon title="Analytics" phase={3} />} />}
+        <Route path="/inventory" element={<Inventory />} />
+        {isAdmin && <Route path="/analytics/*" element={
+              <Suspense fallback={null}>
+                <Analytics />
+              </Suspense>
+            } />}
         <Route path="*" element={<Soon title="Not found" />} />
       </Routes>
     </div>
