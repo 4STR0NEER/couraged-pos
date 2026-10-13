@@ -8,7 +8,7 @@ export const supabase = configured ? createClient(url, key) : null
 
 // Which patch in supabase/ adds each database function.
 const PATCH = {
-  record_sale: '001_pos_patch.sql',
+  record_sale: '008_gcash_ref_live_sales.sql',
   void_sale: '001_pos_patch.sql',
   set_stock_count: '002_inventory.sql',
   sales_report: '003_reports.sql',

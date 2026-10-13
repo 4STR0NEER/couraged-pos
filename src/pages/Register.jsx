@@ -27,6 +27,7 @@ export default function Register() {
   const [cart, setCart] = useState([]) // [{ id, qty }] in the order items were added
   const [method, setMethod] = useState('cash')
   const [tendered, setTendered] = useState('')
+  const [gcashRef, setGcashRef] = useState('') // last 4 digits of the GCash reference
   const [discount, setDiscount] = useState('')
   const [customer, setCustomer] = useState('')
   const [busy, setBusy] = useState(false)
@@ -89,7 +90,8 @@ export default function Register() {
   // Blank tendered means the customer paid the exact amount.
   const paid = method === 'cash' ? (tendered === '' ? total : Number(tendered)) : null
   const change = paid == null ? null : round2(paid - total)
-  const canCharge = lines.length > 0 && !busy && !discTooBig && (change == null || change >= 0)
+  const refMissing = method === 'gcash' && !/^\d{4}$/.test(gcashRef)
+  const canCharge = lines.length > 0 && !busy && !discTooBig && !refMissing && (change == null || change >= 0)
 
   const maxQty = (p) => (p.kind === 'good' ? p.stock_qty : Infinity)
   const add = (p) => {
@@ -124,6 +126,7 @@ export default function Register() {
       p_amount_tendered: paid,
       p_customer_name: customer.trim() || null,
       p_client_ref: clientRef.current,
+      p_payment_ref: method === 'gcash' ? gcashRef : null,
     })
     if (error) {
       setBusy(false)
@@ -133,7 +136,7 @@ export default function Register() {
     }
     const { data: sale } = await supabase
       .from('sales')
-      .select('sale_no, subtotal, discount, total, amount_tendered, change_due, payment_method, customer_name, sale_items(product_name, qty, line_total)')
+      .select('sale_no, subtotal, discount, total, amount_tendered, change_due, payment_method, payment_ref, customer_name, sale_items(product_name, qty, line_total)')
       .eq('id', id)
       .single()
     // The sale is saved either way; fall back to what the register knows if the read-back failed.
@@ -146,6 +149,7 @@ export default function Register() {
         amount_tendered: paid,
         change_due: change,
         payment_method: method,
+        payment_ref: method === 'gcash' ? gcashRef : null,
         customer_name: customer.trim() || null,
         sale_items: lines.map((l) => ({ product_name: l.name, qty: l.qty, line_total: l.qty * l.selling_price })),
       },
@@ -153,6 +157,7 @@ export default function Register() {
     clientRef.current = uuid()
     setCart([])
     setTendered('')
+    setGcashRef('')
     setDiscount('')
     setCustomer('')
     setMethod('cash')
@@ -241,7 +246,7 @@ export default function Register() {
             count={count}
             subtotal={subtotal}
             total={total}
-            {...{ method, setMethod, tendered, setTendered, discount, setDiscount, discTooBig, customer, setCustomer, change, busy, error, canCharge, charge, setQty }}
+            {...{ method, setMethod, tendered, setTendered, gcashRef, setGcashRef, discount, setDiscount, discTooBig, customer, setCustomer, change, busy, error, canCharge, charge, setQty }}
             onClear={() => setCart([])}
             onClose={() => setSheet(false)}
           />
@@ -327,7 +332,7 @@ function ProductTile({ p, inCart, onAdd }) {
 const darkField = 'h-11 w-full rounded-lg bg-ink-2 px-3 text-paper ring-1 ring-paper/10 outline-none transition-shadow duration-150 placeholder:text-ash focus:ring-2 focus:ring-gold'
 const chip = 'press flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold ring-1 ring-paper/10 text-ash hover:text-paper'
 
-function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setTendered, discount, setDiscount, discTooBig, customer, setCustomer, change, busy, error, canCharge, charge, setQty, onClear, onClose }) {
+function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setTendered, gcashRef, setGcashRef, discount, setDiscount, discTooBig, customer, setCustomer, change, busy, error, canCharge, charge, setQty, onClear, onClose }) {
   const [showDiscount, setShowDiscount] = useState(false)
   const [showCustomer, setShowCustomer] = useState(false)
   // Collapse the optional fields again once a sale clears them.
@@ -470,6 +475,21 @@ function Cart({ lines, count, subtotal, total, method, setMethod, tendered, setT
         </div>
 
         {method === 'cash' && lines.length > 0 && <CashIn total={total} tendered={tendered} setTendered={setTendered} change={change} />}
+        {method === 'gcash' && lines.length > 0 && (
+          <label className="block">
+            <span className="text-sm text-ash">Last 4 digits of the GCash reference no.</span>
+            <input
+              autoFocus
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={4}
+              value={gcashRef}
+              onChange={(e) => setGcashRef(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="0000"
+              className={`${darkField} tabular mt-1.5 h-14 text-center font-display text-3xl font-black tracking-[0.4em] short:h-12`}
+            />
+          </label>
+        )}
 
         {error && (
           <p role="alert" className="flex items-start gap-2 rounded-lg bg-crimson/25 px-3 py-2.5 text-sm ring-1 ring-crimson/60">
@@ -582,7 +602,7 @@ function Receipt({ sale, onDone }) {
           <p id="receipt-title" className="relative flex items-center gap-2 text-sm font-bold text-active">
             <CircleCheck className="size-4" aria-hidden="true" /> Sale recorded{sale.sale_no ? ` · receipt #${String(sale.sale_no).padStart(5, '0')}` : ''}
           </p>
-          <p className="relative mt-4 font-display text-xl font-extrabold uppercase text-ash short:mt-2">{cash ? 'Change to give' : `Paid by ${METHOD_LABEL[sale.payment_method]}`}</p>
+          <p className="relative mt-4 font-display text-xl font-extrabold uppercase text-ash short:mt-2">{cash ? 'Change to give' : `Paid by ${METHOD_LABEL[sale.payment_method]}${sale.payment_ref ? ` · ref …${sale.payment_ref}` : ''}`}</p>
           <p className="amount tabular relative origin-left font-display text-7xl font-black leading-none text-gold short:text-6xl">{money(cash ? (sale.change_due ?? 0) : sale.total)}</p>
           <svg viewBox="0 0 400 28" preserveAspectRatio="none" className="relative mt-4 h-6 w-full overflow-visible" aria-hidden="true">
             <path className="ecg" d="M0 16 H150 l7 -4 l7 4 H178 l6 -14 l8 24 l6 -10 H232 l8 -5 l8 5 H400" fill="none" stroke="var(--color-crimson)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />

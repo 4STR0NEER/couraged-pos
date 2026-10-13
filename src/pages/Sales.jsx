@@ -46,7 +46,7 @@ export default function Sales() {
     (offset) => {
       let q = supabase
         .from('sales')
-        .select('id, sale_no, sold_at, payment_method, subtotal, discount, total, amount_tendered, change_due, customer_name, note, status, voided_at, voided_by, void_reason, staff_id, sale_items(product_name, qty, unit_price, line_total)', { count: 'exact' })
+        .select('id, sale_no, sold_at, payment_method, payment_ref, subtotal, discount, total, amount_tendered, change_due, customer_name, note, status, voided_at, voided_by, void_reason, staff_id, sale_items(product_name, qty, unit_price, line_total)', { count: 'exact' })
         .order('sold_at', { ascending: false })
         .range(offset, offset + PAGE - 1)
       // A receipt number finds that receipt whatever the date range.
@@ -75,6 +75,21 @@ export default function Sales() {
   }, [query, range.from, range.to])
   useEffect(() => {
     reload()
+  }, [reload])
+  // Live: refetch when a sale is rung up or voided anywhere. Debounced because one checkout fires an insert and an update.
+  useEffect(() => {
+    let t
+    const ch = supabase
+      .channel('sales-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, () => {
+        clearTimeout(t)
+        t = setTimeout(reload, 500)
+      })
+      .subscribe()
+    return () => {
+      clearTimeout(t)
+      supabase.removeChannel(ch)
+    }
   }, [reload])
 
   const more = async () => {
@@ -239,7 +254,10 @@ function SaleRow({ r, who, onOpen }) {
       </td>
       <td className={`px-3 py-3 max-md:order-3 max-md:col-span-2 max-md:p-0 max-md:pt-1 ${voided ? 'text-smoke' : ''}`}>{itemsSummary(r.sale_items)}</td>
       <td className="px-3 py-3 text-smoke max-md:hidden">{who ?? 'Unknown'}</td>
-      <td className="px-3 py-3 max-md:hidden">{METHOD[r.payment_method]}</td>
+      <td className="px-3 py-3 max-md:hidden">
+        {METHOD[r.payment_method]}
+        {r.payment_ref && <span className="tabular block text-xs text-smoke">ref …{r.payment_ref}</span>}
+      </td>
       <td className="px-5 py-3 text-right max-md:p-0">
         <span className="flex flex-col items-end gap-1">
           <span className={`tabular font-display text-2xl font-black leading-none ${voided ? 'text-smoke line-through decoration-2' : ''}`}>{money(r.total)}</span>
@@ -311,6 +329,7 @@ function ReceiptSheet({ r, names, onClose, onVoided }) {
             <dd className={`font-display text-4xl font-black leading-none ${voided ? 'text-smoke line-through decoration-2' : ''}`}>{money(r.total)}</dd>
           </div>
           <Line k="Paid by" v={METHOD[r.payment_method]} />
+          {r.payment_ref && <Line k="GCash ref (last 4)" v={r.payment_ref} />}
           {cash && r.amount_tendered != null && (
             <>
               <Line k="Cash received" v={money(r.amount_tendered)} />

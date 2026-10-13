@@ -77,7 +77,11 @@ assert.equal((await as(S, `select full_name from profiles`)).length, 3); ok('sta
 
 await fails(S, `select sales_report(current_date - 7, current_date)`, /Only an admin/); ok('staff cannot open reports')
 const mid = (await one(`select id from products where code='MEM-M'`)).id
-await as(S, `select record_sale($1::jsonb, 'gcash')`, [JSON.stringify([{ product_id: mid, qty: 1 }, { product_id: gid, qty: 1 }])])
+const gcashCart = JSON.stringify([{ product_id: mid, qty: 1 }, { product_id: gid, qty: 1 }])
+await fails(S, `select record_sale($1::jsonb, 'gcash')`, /last 4 digits/, [gcashCart]); ok('gcash without a reference is blocked')
+await fails(S, `select record_sale($1::jsonb, 'gcash', 0, null, null, null, null, null, '12a4')`, /last 4 digits/, [gcashCart]); ok('gcash reference must be 4 digits')
+const gid2 = (await as(S, `select record_sale($1::jsonb, 'gcash', 0, null, null, null, null, null, '0427') as id`, [gcashCart]))[0].id
+assert.equal((await one(`select payment_ref from sales where id='${gid2}'`)).payment_ref, '0427'); ok('gcash reference saved on the sale')
 const r = (await as(A, `select sales_report((now() at time zone 'Asia/Manila')::date - 6, (now() at time zone 'Asia/Manila')::date) as r`))[0].r
 assert.equal(+r.totals.revenue, 100 + 1255); assert.equal(r.totals.receipts, 2); assert.equal(r.daily.length, 7)
 assert.equal(r.staff[0].name, 'Sam Staff'); assert.equal(+r.staff[0].memberships, 1)
