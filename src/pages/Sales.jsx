@@ -249,6 +249,7 @@ function SaleRow({ r, who, onOpen }) {
           <span className="tabular block text-xs text-smoke">
             {fmtDateTime(r.sold_at)}
             {r.customer_name && ` · ${r.customer_name}`}
+            {r.payment_ref && <span className="md:hidden"> · GCash …{r.payment_ref}</span>}
           </span>
         </button>
       </td>
