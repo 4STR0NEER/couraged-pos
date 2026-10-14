@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase.js'
 import { manilaToday, money, moneyInput, quickCash, round2, uuid } from '../lib/util.js'
 import { CountUp, EASE_OUT, stockOf } from '../components/ui.jsx'
 import { useAuth } from '../auth.jsx'
+import { printReceipt } from '../lib/printReceipt.js'
+import { RECEIPT } from '../config/receipt.js'
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -18,7 +20,7 @@ const METHODS = [
 const METHOD_LABEL = Object.fromEntries(METHODS)
 
 export default function Register() {
-  const { isAdmin } = useAuth()
+  const { isAdmin, profile } = useAuth()
   const [products, setProducts] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [today, setToday] = useState(null)
@@ -136,7 +138,7 @@ export default function Register() {
     }
     const { data: sale } = await supabase
       .from('sales')
-      .select('sale_no, subtotal, discount, total, amount_tendered, change_due, payment_method, payment_ref, customer_name, sale_items(product_name, qty, line_total)')
+      .select('sale_no, sold_at, subtotal, discount, total, amount_tendered, change_due, payment_method, payment_ref, customer_name, sale_items(product_name, qty, line_total)')
       .eq('id', id)
       .single()
     // The sale is saved either way; fall back to what the register knows if the read-back failed.
@@ -273,7 +275,7 @@ export default function Register() {
         )}
       </AnimatePresence>
 
-      <AnimatePresence>{receipt && <Receipt sale={receipt} onDone={newSale} />}</AnimatePresence>
+      <AnimatePresence>{receipt && <Receipt sale={receipt} cashier={profile?.full_name} onDone={newSale} />}</AnimatePresence>
     </>
   )
 }
@@ -556,15 +558,41 @@ const lubDub = (peak, second, rest) => [
   { to: rest, duration: 520, ease: 'out(2)' },
 ]
 
-function Receipt({ sale, onDone }) {
+// Saved sale -> printReceipt input.
+const toPrint = (sale, cashier) => ({
+  ...RECEIPT,
+  receiptNo: sale.sale_no ? String(sale.sale_no).padStart(5, '0') : null,
+  date: new Date(sale.sold_at ?? Date.now()).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' }),
+  cashier,
+  customer: sale.customer_name,
+  items: sale.sale_items.map((i) => ({ name: i.product_name, qty: i.qty, lineTotal: i.line_total })),
+  subtotal: sale.subtotal,
+  discount: sale.discount,
+  total: sale.total,
+  paymentMethod: METHOD_LABEL[sale.payment_method],
+  paymentRef: sale.payment_ref,
+  cash: sale.amount_tendered ?? sale.total,
+  change: sale.change_due ?? 0,
+})
+
+function Receipt({ sale, cashier, onDone }) {
   const cash = sale.payment_method === 'cash'
   const root = useRef(null)
+  const withReceipt = useCallback(() => {
+    printReceipt(toPrint(sale, cashier))
+    onDone()
+  }, [sale, cashier, onDone])
 
+  // Enter = print receipt, Escape = no receipt.
   useEffect(() => {
-    const onKey = (e) => (e.key === 'Enter' || e.key === 'Escape') && (e.preventDefault(), onDone())
+    const onKey = (e) => {
+      if (e.key !== 'Enter' && e.key !== 'Escape') return
+      e.preventDefault()
+      e.key === 'Enter' ? withReceipt() : onDone()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onDone])
+  }, [onDone, withReceipt])
 
   // The register's one authored moment: the ECG trace runs across and the amount beats once.
   useEffect(() => {
@@ -643,8 +671,11 @@ function Receipt({ sale, onDone }) {
               </div>
             )}
           </dl>
-          <button type="button" autoFocus onClick={onDone} className="press mt-6 h-12 w-full rounded-xl bg-ink font-display short:mt-4 text-xl font-black uppercase tracking-[0.04em] text-paper">
-            New sale
+          <button type="button" autoFocus onClick={withReceipt} className="press mt-6 h-12 w-full rounded-xl bg-ink font-display short:mt-4 text-xl font-black uppercase tracking-[0.04em] text-paper">
+            Print receipt
+          </button>
+          <button type="button" onClick={onDone} className="press mt-2 h-11 w-full rounded-xl font-semibold ring-1 ring-ink/15">
+            No receipt
           </button>
         </div>
       </motion.div>
