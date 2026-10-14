@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase.js'
 import { money } from '../lib/util.js'
 import { EASE_OUT, Sheet, fmtDateTime } from '../components/ui.jsx'
 import RangePicker, { addDays, presets } from '../components/RangePicker.jsx'
+import { useAuth } from '../auth.jsx'
 
 const PAGE = 50
 const METHOD = { cash: 'Cash', gcash: 'GCash', maya: 'Maya', card: 'Card', bank_transfer: 'Bank transfer', other: 'Other' }
@@ -13,6 +14,7 @@ const dayStart = (d) => `${d}T00:00:00+08:00` // Manila midnight
 const select = 'h-11 rounded-lg bg-paper px-3 text-sm font-semibold ring-1 ring-ink/10 outline-none focus:ring-2 focus:ring-gold'
 
 export default function Sales() {
+  const { isAdmin } = useAuth() // staff only see their own receipts (sales read policy)
   const opts = useMemo(presets, [])
   const [range, setRange] = useState({ key: 'today', from: opts[0][2], to: opts[0][3] })
   const [typed, setTyped] = useState('')
@@ -64,7 +66,7 @@ export default function Sales() {
   const reload = useCallback(async () => {
     const id = ++req.current
     setBusy(true)
-    const [list, rep] = await Promise.all([query(0), supabase.rpc('sales_report', { p_from: range.from, p_to: range.to })])
+    const [list, rep] = await Promise.all([query(0), isAdmin ? supabase.rpc('sales_report', { p_from: range.from, p_to: range.to }) : { error: true }])
     if (id !== req.current) return // a newer filter won
     setBusy(false)
     if (list.error) return setError(list.error.message)
@@ -72,7 +74,7 @@ export default function Sales() {
     setRows(list.data)
     setCount(list.count ?? list.data.length)
     if (!rep.error) setSummary(rep.data)
-  }, [query, range.from, range.to])
+  }, [query, range.from, range.to, isAdmin])
   useEffect(() => {
     reload()
   }, [reload])
@@ -110,11 +112,12 @@ export default function Sales() {
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
           <h1 className="font-display text-5xl font-black uppercase leading-none">Sales</h1>
-          <p className="mt-1 text-smoke">Every receipt, who rang it up and how it was paid. Open one to void it.</p>
+          <p className="mt-1 text-smoke">{isAdmin ? 'Every receipt, who rang it up and how it was paid. Open one to void it.' : 'Receipts you rang up.'}</p>
         </div>
         <RangePicker opts={opts} range={range} setRange={setRange} />
       </header>
 
+      {isAdmin && (
       <dl className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl bg-paper ring-1 ring-ink/5 md:grid-cols-3 xl:grid-cols-6">
         {[
           ['Sales', summary && money(summary.totals.revenue), summary && `${summary.totals.receipts} receipt${summary.totals.receipts === 1 ? '' : 's'}`],
@@ -131,7 +134,8 @@ export default function Sales() {
           </div>
         ))}
       </dl>
-      {filtered && <p className="mt-2 text-xs text-smoke">Totals above cover the whole date range; the filters below only narrow the list.</p>}
+      )}
+      {isAdmin && filtered && <p className="mt-2 text-xs text-smoke">Totals above cover the whole date range; the filters below only narrow the list.</p>}
 
       <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
         <label className="relative block lg:w-72">
@@ -139,7 +143,7 @@ export default function Sales() {
           <Search className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-smoke" aria-hidden="true" />
           <input type="search" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Receipt # or customer" className="h-11 w-full rounded-lg bg-paper pr-3 pl-10 ring-1 ring-ink/10 outline-none placeholder:text-smoke focus:ring-2 focus:ring-gold" />
         </label>
-        <div className="grid grid-cols-3 gap-2 lg:flex">
+        <div className={`grid ${isAdmin ? 'grid-cols-3' : 'grid-cols-2'} gap-2 lg:flex`}>
           <label>
             <span className="sr-only">Payment method</span>
             <select value={method} onChange={(e) => setMethod(e.target.value)} disabled={byReceipt} className={`${select} w-full`}>
@@ -151,6 +155,7 @@ export default function Sales() {
               ))}
             </select>
           </label>
+          {isAdmin && (
           <label>
             <span className="sr-only">Staff</span>
             <select value={staff} onChange={(e) => setStaff(e.target.value)} disabled={byReceipt} className={`${select} w-full`}>
@@ -162,6 +167,7 @@ export default function Sales() {
               ))}
             </select>
           </label>
+          )}
           <label>
             <span className="sr-only">Status</span>
             <select value={status} onChange={(e) => setStatus(e.target.value)} disabled={byReceipt} className={`${select} w-full`}>
@@ -221,7 +227,7 @@ export default function Sales() {
         </button>
       )}
 
-      <AnimatePresence>{open && <ReceiptSheet key="sheet" r={open} names={names} onClose={() => setOpenId(null)} onVoided={reload} />}</AnimatePresence>
+      <AnimatePresence>{open && <ReceiptSheet key="sheet" r={open} names={names} canVoid={isAdmin} onClose={() => setOpenId(null)} onVoided={reload} />}</AnimatePresence>
     </main>
   )
 }
@@ -269,7 +275,7 @@ function SaleRow({ r, who, onOpen }) {
   )
 }
 
-function ReceiptSheet({ r, names, onClose, onVoided }) {
+function ReceiptSheet({ r, names, canVoid, onClose, onVoided }) {
   const voided = r.status === 'voided'
   const cash = r.payment_method === 'cash'
   const [reason, setReason] = useState('')
@@ -342,7 +348,7 @@ function ReceiptSheet({ r, names, onClose, onVoided }) {
         </dl>
       </div>
 
-      {!voided && (
+      {canVoid && !voided && (
         <form onSubmit={voidSale} className="mt-6 space-y-3 rounded-xl p-5 ring-1 ring-crimson/25">
           <h3 className="font-display text-2xl font-extrabold uppercase leading-none">Void this sale</h3>
           <p className="text-sm text-smoke">For a mistake or a refund. The items go back into stock and the sale drops out of totals and reports. The receipt stays here, marked voided. This can't be undone.</p>

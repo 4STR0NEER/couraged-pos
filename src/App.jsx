@@ -55,7 +55,7 @@ function Gate() {
 // [label, path, icon, adminOnly]
 const NAV = [
   ['Register', '/', ShoppingCart, false],
-  ['Sales', '/sales', ReceiptText, true],
+  ['Sales', '/sales', ReceiptText, false],
   ['Inventory', '/inventory', Boxes, false],
   ['Expenses', '/expenses', Wallet, true],
   ['Payroll', '/payroll', Banknote, true],
@@ -100,7 +100,7 @@ function Shell() {
         <Routes>
         <Route path="/" element={<Register />} />
         <Route path="/inventory" element={<Inventory />} />
-        {isAdmin && <Route path="/sales" element={<Sales />} />}
+        <Route path="/sales" element={<Sales />} />
         {isAdmin && <Route path="/staff" element={<Staff />} />}
         {isAdmin && <Route path="/expenses" element={<Expenses />} />}
         {isAdmin && <Route path="/payroll/*" element={<Payroll />} />}
