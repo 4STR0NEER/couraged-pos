@@ -14,9 +14,19 @@ const Expenses = lazy(() => import('./pages/Expenses.jsx'))
 const Payroll = lazy(() => import('./pages/payroll/Payroll.jsx'))
 const Analytics = lazy(() => import('./pages/Analytics.jsx'))
 import Splash from './components/Splash.jsx'
+import UpdateBanner from './components/UpdateBanner.jsx'
 
 export default function App() {
   if (!configured) return <Setup />
+  return (
+    <>
+      <UpdateBanner />
+      <Main />
+    </>
+  )
+}
+
+function Main() {
   return (
     <MotionConfig reducedMotion="user">
       <AuthProvider>
