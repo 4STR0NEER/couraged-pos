@@ -1,6 +1,7 @@
 // Prints a receipt through the browser. On the POS PC Chrome runs with --kiosk-printing,
 // so window.print() goes straight to the default (Xprinter) printer with no dialog.
 import { money } from './util.js'
+import { RECEIPT } from '../config/receipt.js'
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 const row = (l, r, cls = '') => `<div class="row ${cls}"><span>${esc(l)}</span><span>${esc(r)}</span></div>`
@@ -36,6 +37,24 @@ ${isCash ? row('Cash', money(r.cash ?? r.total)) + row('Change', money(r.change 
 ${r.footer ? `<div class="c">${esc(r.footer)}</div>` : ''}
 </body></html>`
 }
+
+// A saved sale row (with sale_items) -> receiptHtml input. banner: e.g. 'REPRINT'.
+export const saleReceipt = (sale, { cashier, method, banner } = {}) => ({
+  ...RECEIPT,
+  banner,
+  receiptNo: sale.sale_no ? String(sale.sale_no).padStart(5, '0') : null,
+  date: new Date(sale.sold_at ?? Date.now()).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' }),
+  cashier,
+  customer: sale.customer_name,
+  items: sale.sale_items.map((i) => ({ name: i.product_name, qty: i.qty, lineTotal: i.line_total })),
+  subtotal: sale.subtotal,
+  discount: sale.discount,
+  total: sale.total,
+  paymentMethod: method,
+  paymentRef: sale.payment_ref,
+  cash: sale.amount_tendered ?? sale.total,
+  change: sale.change_due ?? 0,
+})
 
 export function printReceipt(r) {
   const frame = document.createElement('iframe')

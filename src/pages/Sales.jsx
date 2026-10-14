@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { Ban, CircleAlert, Loader2, Search } from 'lucide-react'
+import { Ban, CircleAlert, Loader2, Printer, Search } from 'lucide-react'
 import { supabase } from '../lib/supabase.js'
 import { money } from '../lib/util.js'
 import { EASE_OUT, Sheet, fmtDateTime } from '../components/ui.jsx'
 import RangePicker, { addDays, presets } from '../components/RangePicker.jsx'
 import { useAuth } from '../auth.jsx'
+import { printReceipt, saleReceipt } from '../lib/printReceipt.js'
 
 const PAGE = 50
 const METHOD = { cash: 'Cash', gcash: 'GCash', maya: 'Maya', card: 'Card', bank_transfer: 'Bank transfer', other: 'Other' }
@@ -347,6 +348,16 @@ function ReceiptSheet({ r, names, canVoid, onClose, onVoided }) {
           {r.note && <Line k="Note" v={r.note} />}
         </dl>
       </div>
+
+      {!voided && (
+        <button
+          type="button"
+          onClick={() => printReceipt(saleReceipt(r, { cashier: names[r.staff_id], method: METHOD[r.payment_method], banner: 'REPRINT' }))}
+          className="press mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-1 ring-ink/15"
+        >
+          <Printer className="size-4" aria-hidden="true" /> Reprint receipt
+        </button>
+      )}
 
       {canVoid && !voided && (
         <form onSubmit={voidSale} className="mt-6 space-y-3 rounded-xl p-5 ring-1 ring-crimson/25">

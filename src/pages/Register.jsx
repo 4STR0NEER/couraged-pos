@@ -6,8 +6,7 @@ import { supabase } from '../lib/supabase.js'
 import { manilaToday, money, moneyInput, quickCash, round2, uuid } from '../lib/util.js'
 import { CountUp, EASE_OUT, stockOf } from '../components/ui.jsx'
 import { useAuth } from '../auth.jsx'
-import { printReceipt } from '../lib/printReceipt.js'
-import { RECEIPT } from '../config/receipt.js'
+import { printReceipt, saleReceipt } from '../lib/printReceipt.js'
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -558,28 +557,11 @@ const lubDub = (peak, second, rest) => [
   { to: rest, duration: 520, ease: 'out(2)' },
 ]
 
-// Saved sale -> printReceipt input.
-const toPrint = (sale, cashier) => ({
-  ...RECEIPT,
-  receiptNo: sale.sale_no ? String(sale.sale_no).padStart(5, '0') : null,
-  date: new Date(sale.sold_at ?? Date.now()).toLocaleString('en-PH', { timeZone: 'Asia/Manila', dateStyle: 'medium', timeStyle: 'short' }),
-  cashier,
-  customer: sale.customer_name,
-  items: sale.sale_items.map((i) => ({ name: i.product_name, qty: i.qty, lineTotal: i.line_total })),
-  subtotal: sale.subtotal,
-  discount: sale.discount,
-  total: sale.total,
-  paymentMethod: METHOD_LABEL[sale.payment_method],
-  paymentRef: sale.payment_ref,
-  cash: sale.amount_tendered ?? sale.total,
-  change: sale.change_due ?? 0,
-})
-
 function Receipt({ sale, cashier, onDone }) {
   const cash = sale.payment_method === 'cash'
   const root = useRef(null)
   const withReceipt = useCallback(() => {
-    printReceipt(toPrint(sale, cashier))
+    printReceipt(saleReceipt(sale, { cashier, method: METHOD_LABEL[sale.payment_method] }))
     onDone()
   }, [sale, cashier, onDone])
 
