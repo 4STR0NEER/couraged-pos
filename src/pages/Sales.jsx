@@ -6,7 +6,7 @@ import { money } from '../lib/util.js'
 import { EASE_OUT, Sheet, fmtDateTime } from '../components/ui.jsx'
 import RangePicker, { addDays, presets } from '../components/RangePicker.jsx'
 import { useAuth } from '../auth.jsx'
-import { printReceipt, saleReceipt } from '../lib/printReceipt.js'
+import { printReceipt, saleReceipt, testReceipt } from '../lib/printReceipt.js'
 
 const PAGE = 50
 const METHOD = { cash: 'Cash', gcash: 'GCash', maya: 'Maya', card: 'Card', bank_transfer: 'Bank transfer', other: 'Other' }
@@ -115,7 +115,12 @@ export default function Sales() {
           <h1 className="font-display text-5xl font-black uppercase leading-none">Sales</h1>
           <p className="mt-1 text-smoke">{isAdmin ? 'Every receipt, who rang it up and how it was paid. Open one to void it.' : 'Receipts you rang up.'}</p>
         </div>
-        <RangePicker opts={opts} range={range} setRange={setRange} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => printReceipt(testReceipt())} className="press flex h-11 items-center gap-2 rounded-lg px-4 font-semibold ring-1 ring-ink/15">
+            <Printer className="size-4" aria-hidden="true" /> Print test receipt
+          </button>
+          <RangePicker opts={opts} range={range} setRange={setRange} />
+        </div>
       </header>
 
       {isAdmin && (

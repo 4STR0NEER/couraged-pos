@@ -56,6 +56,26 @@ export const saleReceipt = (sale, { cashier, method, banner } = {}) => ({
   change: sale.change_due ?? 0,
 })
 
+// Sample receipt so staff can check the printer without making a sale.
+export const testReceipt = () =>
+  saleReceipt(
+    {
+      sale_no: 0,
+      subtotal: 1350,
+      discount: 50,
+      total: 1300,
+      amount_tendered: 1500,
+      change_due: 200,
+      customer_name: 'Sample <Customer> & Co.',
+      sale_items: [
+        { product_name: 'Day pass', qty: 1, line_total: 150 },
+        { product_name: 'Monthly membership', qty: 1, line_total: 1000 },
+        { product_name: 'Bottled water 500ml', qty: 4, line_total: 200 },
+      ],
+    },
+    { cashier: 'Test', method: 'Cash', banner: 'TEST PRINT' },
+  )
+
 export function printReceipt(r) {
   const frame = document.createElement('iframe')
   frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden'
