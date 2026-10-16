@@ -1,0 +1,296 @@
+{
+  "api/staff.js": {
+    "mtime": 1791798441.0179422,
+    "seen": 1791984310.666418,
+    "ast_hash": "35231a44c027b920f15180c3dbbb31f6",
+    "semantic_hash": "35231a44c027b920f15180c3dbbb31f6"
+  },
+  "package.json": {
+    "mtime": 1791957110.3722584,
+    "seen": 1791984310.6664238,
+    "ast_hash": "a27177f0249a5cd2270cb91e5d847a71",
+    "semantic_hash": "a27177f0249a5cd2270cb91e5d847a71"
+  },
+  "server/staff.js": {
+    "mtime": 1791798440.9243512,
+    "seen": 1791984310.6664257,
+    "ast_hash": "5560b0def6e90e4f21b3e264ef1f6558",
+    "semantic_hash": "5560b0def6e90e4f21b3e264ef1f6558"
+  },
+  "server/staff.test.mjs": {
+    "mtime": 1791798441.1177597,
+    "seen": 1791984310.6664267,
+    "ast_hash": "fc06a587872dee6791cda3d8ec896945",
+    "semantic_hash": "fc06a587872dee6791cda3d8ec896945"
+  },
+  "src/App.jsx": {
+    "mtime": 1791957179.3288658,
+    "seen": 1791984310.6664279,
+    "ast_hash": "be94055ca52c21e9eb3d9139d93514e8",
+    "semantic_hash": "be94055ca52c21e9eb3d9139d93514e8"
+  },
+  "src/auth.jsx": {
+    "mtime": 1791794963.246411,
+    "seen": 1791984310.666429,
+    "ast_hash": "7fee037ba9d7a89757cbf06876349286",
+    "semantic_hash": "7fee037ba9d7a89757cbf06876349286"
+  },
+  "src/components/RangePicker.jsx": {
+    "mtime": 1791797477.81879,
+    "seen": 1791984310.6664302,
+    "ast_hash": "c03ea7dd23f870274887952e4643a905",
+    "semantic_hash": "c03ea7dd23f870274887952e4643a905"
+  },
+  "src/components/Splash.jsx": {
+    "mtime": 1791794564.1586912,
+    "seen": 1791984310.666431,
+    "ast_hash": "d8963d3615d40e137582ed9e25317751",
+    "semantic_hash": "d8963d3615d40e137582ed9e25317751"
+  },
+  "src/components/UpdateBanner.jsx": {
+    "mtime": 1791957178.241524,
+    "seen": 1791984310.6664321,
+    "ast_hash": "296ac0cab7925a45a31a287d5ec515fe",
+    "semantic_hash": "296ac0cab7925a45a31a287d5ec515fe"
+  },
+  "src/components/form.jsx": {
+    "mtime": 1791808136.9940526,
+    "seen": 1791984310.666433,
+    "ast_hash": "c8975e8756dc6eead7a54be05455f695",
+    "semantic_hash": "c8975e8756dc6eead7a54be05455f695"
+  },
+  "src/components/ui.jsx": {
+    "mtime": 1791806891.153175,
+    "seen": 1791984310.666434,
+    "ast_hash": "2999a9c4f2ca1ffeeccbefdff9b76a55",
+    "semantic_hash": "2999a9c4f2ca1ffeeccbefdff9b76a55"
+  },
+  "src/lib/payroll.js": {
+    "mtime": 1791808057.3362403,
+    "seen": 1791984310.6664352,
+    "ast_hash": "73abae1e2a865a3074b891dda5ceb0cd",
+    "semantic_hash": "73abae1e2a865a3074b891dda5ceb0cd"
+  },
+  "src/lib/payroll.test.mjs": {
+    "mtime": 1791808064.007102,
+    "seen": 1791984310.6664364,
+    "ast_hash": "6727631afd395b52f1d06b53b40313fd",
+    "semantic_hash": "6727631afd395b52f1d06b53b40313fd"
+  },
+  "src/lib/pdf.js": {
+    "mtime": 1791808856.773025,
+    "seen": 1791984310.6664374,
+    "ast_hash": "78523ee14fc102a81328416913dc87a5",
+    "semantic_hash": "78523ee14fc102a81328416913dc87a5"
+  },
+  "src/lib/pdf.test.mjs": {
+    "mtime": 1791809127.1268084,
+    "seen": 1791984310.6664383,
+    "ast_hash": "3a9c58bbeb4d66c1e5def17675f45ad7",
+    "semantic_hash": "3a9c58bbeb4d66c1e5def17675f45ad7"
+  },
+  "src/lib/reports.js": {
+    "mtime": 1791808856.0789518,
+    "seen": 1791984310.6664395,
+    "ast_hash": "07f29e984a8e90202c7310fcb39d8c24",
+    "semantic_hash": "07f29e984a8e90202c7310fcb39d8c24"
+  },
+  "src/lib/supabase.js": {
+    "mtime": 1791903556.548462,
+    "seen": 1791984310.6664405,
+    "ast_hash": "320a4427bcd074017614fefd769fb281",
+    "semantic_hash": "320a4427bcd074017614fefd769fb281"
+  },
+  "src/lib/util.js": {
+    "mtime": 1791794776.3655994,
+    "seen": 1791984310.6664412,
+    "ast_hash": "16521a95d0b672bbaf869af496cb61ee",
+    "semantic_hash": "16521a95d0b672bbaf869af496cb61ee"
+  },
+  "src/main.jsx": {
+    "mtime": 1791789743.7926476,
+    "seen": 1791984310.6664422,
+    "ast_hash": "1e7e503cf1ad7420da2c4844a7b94f35",
+    "semantic_hash": "1e7e503cf1ad7420da2c4844a7b94f35"
+  },
+  "src/pages/Analytics.jsx": {
+    "mtime": 1791808880.675089,
+    "seen": 1791984310.666443,
+    "ast_hash": "ea332fd53c969ffc2b9027190f7d808d",
+    "semantic_hash": "ea332fd53c969ffc2b9027190f7d808d"
+  },
+  "src/pages/Expenses.jsx": {
+    "mtime": 1791808404.2499328,
+    "seen": 1791984310.666444,
+    "ast_hash": "ccb3cf819f2a0f0df2c28e9614c284e1",
+    "semantic_hash": "ccb3cf819f2a0f0df2c28e9614c284e1"
+  },
+  "src/pages/Inventory.jsx": {
+    "mtime": 1791807035.5632222,
+    "seen": 1791984310.6664448,
+    "ast_hash": "0ca61aab4b41255e3b0d0a5bdfe09b18",
+    "semantic_hash": "0ca61aab4b41255e3b0d0a5bdfe09b18"
+  },
+  "src/pages/Login.jsx": {
+    "mtime": 1791789854.508897,
+    "seen": 1791984310.6664457,
+    "ast_hash": "aba1d23dbd0cb2108d9d1093026dfa4d",
+    "semantic_hash": "aba1d23dbd0cb2108d9d1093026dfa4d"
+  },
+  "src/pages/Register.jsx": {
+    "mtime": 1791903582.3479962,
+    "seen": 1791984310.666447,
+    "ast_hash": "92e7fdf03ca551bf4fae40414f8375de",
+    "semantic_hash": "92e7fdf03ca551bf4fae40414f8375de"
+  },
+  "src/pages/Sales.jsx": {
+    "mtime": 1791903843.0810444,
+    "seen": 1791984310.6664479,
+    "ast_hash": "402593056c8439a73e0fe3aa31f0192e",
+    "semantic_hash": "402593056c8439a73e0fe3aa31f0192e"
+  },
+  "src/pages/Staff.jsx": {
+    "mtime": 1791798608.8086064,
+    "seen": 1791984310.6664486,
+    "ast_hash": "d7c3a127d660ab8e2cb94f5fe697fab6",
+    "semantic_hash": "d7c3a127d660ab8e2cb94f5fe697fab6"
+  },
+  "src/pages/payroll/Employees.jsx": {
+    "mtime": 1791808332.1001377,
+    "seen": 1791984310.6664495,
+    "ast_hash": "a00f84af1bc21a89a867fb8f315ffdd9",
+    "semantic_hash": "a00f84af1bc21a89a867fb8f315ffdd9"
+  },
+  "src/pages/payroll/PayRun.jsx": {
+    "mtime": 1791808880.6795712,
+    "seen": 1791984310.6664507,
+    "ast_hash": "a5a99908a80394d166e068a87dec3ecc",
+    "semantic_hash": "a5a99908a80394d166e068a87dec3ecc"
+  },
+  "src/pages/payroll/Payroll.jsx": {
+    "mtime": 1791808570.8595657,
+    "seen": 1791984310.6664517,
+    "ast_hash": "e66a195bf3d5c20d700467c0f8a69cef",
+    "semantic_hash": "e66a195bf3d5c20d700467c0f8a69cef"
+  },
+  "src/pages/payroll/Rates.jsx": {
+    "mtime": 1791808371.4052532,
+    "seen": 1791984310.6664524,
+    "ast_hash": "79c0cd8146580a632508dadc6e6e98d3",
+    "semantic_hash": "79c0cd8146580a632508dadc6e6e98d3"
+  },
+  "supabase/001_pos_patch.sql": {
+    "mtime": 1791798923.8083098,
+    "seen": 1791984310.6664536,
+    "ast_hash": "c116b76db284e2eae9a4d6787b5b811f",
+    "semantic_hash": "c116b76db284e2eae9a4d6787b5b811f"
+  },
+  "supabase/002_inventory.sql": {
+    "mtime": 1791798923.8560033,
+    "seen": 1791984310.6664543,
+    "ast_hash": "4b010b2dd3fcaeb81875e2a742af789d",
+    "semantic_hash": "4b010b2dd3fcaeb81875e2a742af789d"
+  },
+  "supabase/003_reports.sql": {
+    "mtime": 1791798923.9141567,
+    "seen": 1791984310.6664553,
+    "ast_hash": "5fae4fcabce018f9e4f355c408d7e9c9",
+    "semantic_hash": "5fae4fcabce018f9e4f355c408d7e9c9"
+  },
+  "supabase/004_admin_sales_delete.sql": {
+    "mtime": 1791798923.9519565,
+    "seen": 1791984310.666456,
+    "ast_hash": "cf890febbee4a576aaa15ee0e90b66cb",
+    "semantic_hash": "cf890febbee4a576aaa15ee0e90b66cb"
+  },
+  "supabase/005_staff.sql": {
+    "mtime": 1791798923.9990253,
+    "seen": 1791984310.6664574,
+    "ast_hash": "a7b49bd7257c4d10cc63b1edbaf4305e",
+    "semantic_hash": "a7b49bd7257c4d10cc63b1edbaf4305e"
+  },
+  "supabase/006_expenses.sql": {
+    "mtime": 1791807211.1347885,
+    "seen": 1791984310.6664581,
+    "ast_hash": "229f1d4896130bd78bbe201e30c545d2",
+    "semantic_hash": "229f1d4896130bd78bbe201e30c545d2"
+  },
+  "supabase/007_payroll.sql": {
+    "mtime": 1791808007.7104838,
+    "seen": 1791984310.666459,
+    "ast_hash": "0b1fdc0fc1cbbe05211a7a1880ab4c69",
+    "semantic_hash": "0b1fdc0fc1cbbe05211a7a1880ab4c69"
+  },
+  "supabase/008_gcash_ref_live_sales.sql": {
+    "mtime": 1791903549.3832462,
+    "seen": 1791984310.6664598,
+    "ast_hash": "1116a94d0077db70e6f023b388867876",
+    "semantic_hash": "1116a94d0077db70e6f023b388867876"
+  },
+  "supabase/schema.sql": {
+    "mtime": 1791789651.1837876,
+    "seen": 1791984310.6664608,
+    "ast_hash": "4c2c227fe8272ab17a3379dc0719b35c",
+    "semantic_hash": "4c2c227fe8272ab17a3379dc0719b35c"
+  },
+  "supabase/test.mjs": {
+    "mtime": 1791903556.5012486,
+    "seen": 1791984310.6664622,
+    "ast_hash": "b454100936a8252f08fcee57107e7b62",
+    "semantic_hash": "b454100936a8252f08fcee57107e7b62"
+  },
+  "vercel.json": {
+    "mtime": 1791798443.7740166,
+    "seen": 1791984310.666463,
+    "ast_hash": "d1744352398f1fe2ddc33251aac5bbb6",
+    "semantic_hash": "d1744352398f1fe2ddc33251aac5bbb6"
+  },
+  "vite.config.js": {
+    "mtime": 1791957266.78037,
+    "seen": 1791984310.666464,
+    "ast_hash": "95a656115a8d87b349e35f103b4dea90",
+    "semantic_hash": "95a656115a8d87b349e35f103b4dea90"
+  },
+  "README.md": {
+    "mtime": 1791903556.6073987,
+    "seen": 1791984310.666465,
+    "ast_hash": "5424a4b1e0b7e49db7a886d27cb4fb5f",
+    "semantic_hash": "5424a4b1e0b7e49db7a886d27cb4fb5f"
+  },
+  "index.html": {
+    "mtime": 1791957163.9023232,
+    "seen": 1791984310.6664662,
+    "ast_hash": "75c510b8c67f9fe2e78b60d047c22c9e",
+    "semantic_hash": "75c510b8c67f9fe2e78b60d047c22c9e"
+  },
+  "public/assets/apple-touch-icon.png": {
+    "mtime": 1791957148.582,
+    "seen": 1791984310.6664674,
+    "ast_hash": "6252c483b221267d0f8a054de90144ef",
+    "semantic_hash": "6252c483b221267d0f8a054de90144ef"
+  },
+  "public/assets/icon-192.png": {
+    "mtime": 1791957148.545,
+    "seen": 1791984310.6664684,
+    "ast_hash": "e8351d6e045d5e5730b8b891a0fcfb65",
+    "semantic_hash": "e8351d6e045d5e5730b8b891a0fcfb65"
+  },
+  "public/assets/icon-512-maskable.png": {
+    "mtime": 1791957148.613,
+    "seen": 1791984310.6664693,
+    "ast_hash": "11b331a63ace0d2632697fc653b73468",
+    "semantic_hash": "11b331a63ace0d2632697fc653b73468"
+  },
+  "public/assets/icon-512.png": {
+    "mtime": 1791957148.563,
+    "seen": 1791984310.66647,
+    "ast_hash": "1296ead149cf5df6108663adc0646ee1",
+    "semantic_hash": "1296ead149cf5df6108663adc0646ee1"
+  },
+  "public/assets/logo.jpg": {
+    "mtime": 1791789597.4698763,
+    "seen": 1791984310.6664712,
+    "ast_hash": "a644e7a7b7615530c2f70e7835438779",
+    "semantic_hash": "a644e7a7b7615530c2f70e7835438779"
+  }
+}
