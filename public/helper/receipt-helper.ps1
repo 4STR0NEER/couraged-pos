@@ -51,15 +51,16 @@ if (-not $Printer -and -not $OutFile) {
   $Printer = Get-Printer | Where-Object Name -match 'XP-?58|POS-?58' | Select-Object -First 1 -ExpandProperty Name
 }
 $allowed = @($Allow -split ',' | ForEach-Object { $_.Trim().TrimEnd('/') } | Where-Object { $_ })
-# Only the POS may print: its Cloudflare / Vercel addresses, local dev, and whatever RECEIPT_ALLOW adds.
+# Only the POS may print: the live site, its Cloudflare / Vercel addresses, local dev, and whatever RECEIPT_ALLOW adds.
 function Allowed($origin) {
-  $origin -and ($origin -match '^https://([a-z0-9-]+\.)*(pages\.dev|vercel\.app)$' -or
+  $origin -and ($origin -eq 'https://pos.couragedph.com' -or $origin -match '^https://([a-z0-9-]+\.)*(pages\.dev|vercel\.app)$' -or
     $origin -match '^http://(localhost|127\.0\.0\.1)(:\d+)?$' -or $allowed -contains $origin)
 }
 
 function Reply($stream, $code, $text, $origin) {
   $body = [Text.Encoding]::UTF8.GetBytes($text)
-  $cors = if (Allowed $origin) { "Access-Control-Allow-Origin: $origin`r`nAccess-Control-Allow-Private-Network: true`r`nAccess-Control-Allow-Methods: GET, POST, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type`r`n" } else { '' }
+  # Refusals carry CORS too, so the POS can show the real reason instead of "helper not running".
+  $cors = if ($origin) { "Access-Control-Allow-Origin: $origin`r`nAccess-Control-Allow-Private-Network: true`r`nAccess-Control-Allow-Methods: GET, POST, OPTIONS`r`nAccess-Control-Allow-Headers: Content-Type`r`n" } else { '' }
   $head = [Text.Encoding]::ASCII.GetBytes("HTTP/1.1 $code`r`nContent-Type: text/plain; charset=utf-8`r`nContent-Length: $($body.Length)`r`nConnection: close`r`n$cors`r`n")
   $stream.Write($head, 0, $head.Length)
   $stream.Write($body, 0, $body.Length)
