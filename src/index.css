@@ -96,9 +96,7 @@ input[type='number'] {
   animation: pulse-soft 1.4s ease-in-out infinite;
 }
 
-/* Ctrl+P on the app prints nothing and feeds only a short strip, not the whole roll.
-   Receipts print from their own iframe (lib/printReceipt.js), which has its own @page. */
+/* Ctrl+P on the app prints nothing. Receipts print from their own iframe (lib/printReceipt.js). */
 @media print {
   #root { display: none !important; }
 }
-@page { size: 58mm 10mm; margin: 0; }
