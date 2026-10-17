@@ -19,7 +19,7 @@ function makePassword() {
   return [...r].map((x) => abc[x % abc.length]).join('')
 }
 
-// Calls api/staff.js (Vercel function) with the admin's session.
+// Calls /api/staff with the admin's session: functions/api/staff.js on Cloudflare (live), api/staff.js on Vercel (previews).
 async function staffApi(body) {
   const { data } = await supabase.auth.getSession()
   try {
