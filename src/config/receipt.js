@@ -5,5 +5,6 @@ export const RECEIPT = {
   headerLines: ['', '', ''],
   footerLines: ['Thank you!'],
   paperWidth: 58, // 58 or 80 (mm), match the roll in the Xprinter (XP-58IIH = 58)
+  helperUrl: 'http://127.0.0.1:9123', // receipt helper on the front desk PC (public/helper/receipt-helper.ps1)
   autoPrint: false, // true = print as soon as a sale is saved, without pressing Print receipt
 }

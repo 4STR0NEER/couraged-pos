@@ -29,7 +29,7 @@ export default defineConfig({
         // App shell only. No runtimeCaching, so cross-origin calls (Supabase REST,
         // auth, realtime) are never intercepted and always go to the network.
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/helper\//], // helper/: receipt helper downloads
       },
     }),
   ],
