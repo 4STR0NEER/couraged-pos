@@ -7,6 +7,7 @@ import { manilaToday, money, moneyInput, quickCash, round2, uuid } from '../lib/
 import { CountUp, EASE_OUT, stockOf } from '../components/ui.jsx'
 import { useAuth } from '../auth.jsx'
 import { printReceipt, saleReceipt } from '../lib/printReceipt.js'
+import { RECEIPT } from '../config/receipt.js'
 
 const METHODS = [
   ['cash', 'Cash'],
@@ -564,6 +565,11 @@ function Receipt({ sale, cashier, onDone }) {
     printReceipt(saleReceipt(sale, { cashier, method: METHOD_LABEL[sale.payment_method] }))
     onDone()
   }, [sale, cashier, onDone])
+
+  // Optional: print straight away (off by default, see config/receipt.js).
+  useEffect(() => {
+    if (RECEIPT.autoPrint) withReceipt()
+  }, []) // once per sale
 
   // Enter = print receipt, Escape = no receipt.
   useEffect(() => {

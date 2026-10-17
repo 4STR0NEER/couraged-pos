@@ -4,6 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // The front desk PC is on old Windows, stuck on Chrome 109.
+  build: { target: ['chrome109', 'edge109', 'firefox115', 'safari15'] },
   plugins: [
     react(),
     tailwindcss(),

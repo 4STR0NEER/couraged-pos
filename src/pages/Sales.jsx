@@ -354,15 +354,14 @@ function ReceiptSheet({ r, names, canVoid, onClose, onVoided }) {
         </dl>
       </div>
 
-      {!voided && (
-        <button
-          type="button"
-          onClick={() => printReceipt(saleReceipt(r, { cashier: names[r.staff_id], method: METHOD[r.payment_method], banner: 'REPRINT' }))}
-          className="press mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-1 ring-ink/15"
-        >
-          <Printer className="size-4" aria-hidden="true" /> Reprint receipt
-        </button>
-      )}
+      {/* Voided sales still print, marked VOIDED (see saleReceipt). */}
+      <button
+        type="button"
+        onClick={() => printReceipt(saleReceipt(r, { cashier: names[r.staff_id], method: METHOD[r.payment_method], banner: 'REPRINT' }))}
+        className="press mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-lg font-semibold ring-1 ring-ink/15"
+      >
+        <Printer className="size-4" aria-hidden="true" /> Reprint receipt
+      </button>
 
       {canVoid && !voided && (
         <form onSubmit={voidSale} className="mt-6 space-y-3 rounded-xl p-5 ring-1 ring-crimson/25">
